@@ -9,6 +9,7 @@ Breve repositorio para obtener y procesar datos públicos de la AEMET (Agencia E
 **Instalación — Entorno virtual (venv)**
 
 Para instalar el entorno virtual, se debe ejecutar el siguiente comando en la terminal.
+
 `Powershell`
 ```
 C:\Users\03010496\AppData\Local\Microsoft\WindowsApps\python.exe -m venv .env
@@ -23,6 +24,7 @@ Luego, se activa el entorno virtual con el siguiente comando:
 source .venv/Scripts/activate
 ```
 hay que instalar las dependencias necesarias para el proyecto.
+
 `Git Bash`
 ```
 python -m pip install --upgrade pip
@@ -44,6 +46,7 @@ Pasos para obtener la API key:
 
 
 Para el proyecto, se tiene que utilizar las siguientes API endpoints:
+
 - Inventario de estaciones (maestro de estaciones):
  `/api/valores/climatologicos/inventarioestaciones/todasestaciones`
 - Inventario de estaciones (valores climatológicos):
