@@ -18,7 +18,7 @@ Sigue estos sencillos pasos para tener tu entorno listo en menos de 2 minutos.
 ### Paso 1: Abre la terminal
 Abre tu terminal favorita (Git Bash, PowerShell, Terminal de VS Code, etc.) y colócate dentro de **tu carpeta personal** de trabajo:
 ```bash
-cd Miguel   # Cambia "Miguel" por tu nombre de carpeta correspondiente
+cd Nombre   # Cambia "Nombre" por tu nombre de carpeta correspondiente
 ```
 
 ### Paso 2: Crea tu Entorno Virtual
