@@ -1,0 +1,13 @@
+pandas
+numpy
+matplotlib
+ipykernel
+requests
+plotly
+psycopg
+import os
+from IPython.display import Markdown, display  # prueba Markdown para display
+
+from dotenv import load_dotenv
+
+import json
