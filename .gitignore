@@ -220,3 +220,6 @@ __marimo__/
 # OmG state directory
 .omg/
 
+# AI Agent rules
+.clinerules
+.cursorrules
