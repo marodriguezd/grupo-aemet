@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estado Actual y Auditoría - AEMET Forecasting Pipeline</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #020617 100%);
+            --card-bg: rgba(30, 41, 59, 0.4);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-cyan: #06b6d4;
+            --accent-violet: #8b5cf6;
+            --accent-pink: #ec4899;
+            
+            --status-completed: #10b981;
+            --status-pending: #f59e0b;
+            --status-cloud: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3.5rem;
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-violet));
+            border-radius: 2px;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 30%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 300;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .subtitle a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .subtitle a:hover {
+            color: var(--accent-violet);
+            text-decoration: underline;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 2.5rem;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(139, 92, 246, 0.1);
+        }
+
+        h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: linear-gradient(90deg, #ffffff, #c7d2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Tabla Estilizada */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            padding: 1.2rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        th {
+            background-color: rgba(15, 23, 42, 0.6);
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr {
+            transition: background-color 0.2s ease;
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Badges de Estado */
+        .badge {
+            display: inline-block;
+            padding: 0.35rem 0.8rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .badge-completed {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: var(--status-completed);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .badge-pending {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: var(--status-pending);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .badge-cloud {
+            background-color: rgba(59, 130, 246, 0.15);
+            color: var(--status-cloud);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+        }
+
+        /* Listas y Detalles Técnicos */
+        .technical-intro {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 1.05rem;
+        }
+
+        .tech-list {
+            list-style: none;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .tech-list {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .tech-item {
+            background: rgba(15, 23, 42, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .tech-item:hover {
+            border-color: rgba(139, 92, 246, 0.2);
+        }
+
+        .tech-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--accent-cyan);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tech-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .tech-bullets {
+            list-style-type: none;
+            padding-left: 0.5rem;
+        }
+
+        .tech-bullets li {
+            position: relative;
+            padding-left: 1.25rem;
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+        }
+
+        .tech-bullets li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--accent-violet);
+            font-weight: bold;
+        }
+
+        /* Próximas Fases */
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .step-block {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .step-num {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            min-width: 45px;
+        }
+
+        .step-content h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-content p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .step-content ul {
+            list-style-type: none;
+            margin-top: 0.5rem;
+        }
+
+        .step-content ul li {
+            position: relative;
+            padding-left: 1.25rem;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+        }
+
+        .step-content ul li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--accent-pink);
+        }
+
+        footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 0.85rem;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Estado del Proyecto y Auditoría</h1>
+            <p class="subtitle">AEMET Forecasting Pipeline — Análisis comparativo de <a href="file:///home/marodriguezd/Github/grupo-aemet/aemet.md">aemet.md</a> con el espacio <a href="file:///home/marodriguezd/Github/grupo-aemet/Miguel/">Miguel/</a></p>
+        </header>
+
+        <!-- Sección 1: Tabla -->
+        <section class="card">
+            <h2>📊 Tabla Comparativa: Propuesta vs. Realidad</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Componente</th>
+                            <th>Propuesta Teórica</th>
+                            <th>Implementación Real</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Infraestructura Cloud</strong></td>
+                            <td>Bucket S3 para crudos y PostgreSQL en AWS RDS.</td>
+                            <td>Almacenamiento local estructurado en disco. API Key en <code>.env</code>.</td>
+                            <td><span class="badge badge-cloud">Pendiente migrar a AWS</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pipeline de Ingesta</strong></td>
+                            <td>AWS Lambda con EventBridge (diario) y trigger de S3.</td>
+                            <td>Notebook local <a href="file:///home/marodriguezd/Github/grupo-aemet/Miguel/AEMET_Resumen%20editable.ipynb" style="color: var(--accent-cyan); text-decoration: none;">AEMET_Resumen editable.ipynb</a>.</td>
+                            <td><span class="badge badge-completed">Completado (Local)</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pipeline ETL & Limpieza</strong></td>
+                            <td>Transformación en AWS Lambda de JSON a PostgreSQL.</td>
+                            <td>Ingesta y ETL local refinado (strings a numéricos, decimales, nulos).</td>
+                            <td><span class="badge badge-completed">Completado (Local)</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Almacenamiento Físico</strong></td>
+                            <td>Base de Datos PostgreSQL.</td>
+                            <td>Ficheros anuales ordenados en <code>/sheets/csv/</code> y <code>/sheets/xlsx/</code>.</td>
+                            <td><span class="badge badge-completed">Completado (Local)</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Modelo de Forecasting</strong></td>
+                            <td>Modelo decoder-only de Transformers para temperatura.</td>
+                            <td>Sin empezar.</td>
+                            <td><span class="badge badge-pending">Pendiente</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Servicios API</strong></td>
+                            <td>FastAPI desplegado en EC2 con endpoints <code>/ask</code> y <code>/forecast</code>.</td>
+                            <td>Sin empezar.</td>
+                            <td><span class="badge badge-pending">Pendiente</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Interfaz de Usuario</strong></td>
+                            <td>Dashboard en Streamlit para EDA interactivo y predicciones.</td>
+                            <td>Sin empezar.</td>
+                            <td><span class="badge badge-pending">Pendiente</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Sección 2: Detalles Técnicos -->
+        <section class="card">
+            <h2>🛠️ Detalles Técnicos de la Solución (Miguel)</h2>
+            <p class="technical-intro">La lógica de producción implementada resuelve las severas restricciones del OpenData de la AEMET y optimiza los recursos de la máquina de ejecución:</p>
+            
+            <div class="tech-list">
+                <div class="tech-item">
+                    <div class="tech-title">⚡ Control de Rate Limiting</div>
+                    <p class="tech-desc">Evita bloqueos del token de la API de AEMET OpenData.</p>
+                    <ul class="tech-bullets">
+                        <li>Implementa <strong>backoff exponencial</strong> (multiplicador ×2) al recibir códigos HTTP 429.</li>
+                        <li>Timeout estricto de 30 segundos (<code>timeout=30</code>) para prevenir hilos en espera infinita.</li>
+                        <li>Pausas estratégicas entre bloques anuales y mensuales.</li>
+                    </ul>
+                </div>
+
+                <div class="tech-item">
+                    <div class="tech-title">💾 Gestión de RAM</div>
+                    <p class="tech-desc">Prevención de desbordamientos de memoria física.</p>
+                    <ul class="tech-bullets">
+                        <li>Segmentación temporal estricta de descargas en bloques de 15 días.</li>
+                        <li>Exportación física inmediata por años en CSV y XLSX.</li>
+                        <li>Limpieza explícita del recolector de basura mediante <code>gc.collect()</code>.</li>
+                    </ul>
+                </div>
+
+                <div class="tech-item">
+                    <div class="tech-title">🧹 ETL e Ingesta Robusta</div>
+                    <p class="tech-desc">Tratamiento y normalización de variables climatológicas.</p>
+                    <ul class="tech-bullets">
+                        <li>Reemplazo de comas españolas por puntos y conversión a <code>float32</code>.</li>
+                        <li>Tratamiento de la lluvia inapreciable (<code>"Ip"</code>) mapeada a <code>0.0</code>.</li>
+                        <li>Parseo seguro de horas en campos complejos con valores textuales (como "Varias").</li>
+                    </ul>
+                </div>
+
+                <div class="tech-item">
+                    <div class="tech-title">🔧 Monkeypatch de Estabilidad</div>
+                    <p class="tech-desc">Garantía de ejecución iterativa en entornos Jupyter Notebook.</p>
+                    <ul class="tech-bullets">
+                        <li>Parcheo del deallocator en <code>zipfile.ZipFile.__del__</code>.</li>
+                        <li>Previene fallos por <code>RecursionError</code> al re-ejecutar celdas en caliente sin reiniciar kernel.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección 3: Próximas Fases -->
+        <section class="card">
+            <h2>🚀 Próximas Fases Prioritarias</h2>
+            <div class="steps">
+                <div class="step-block">
+                    <div class="step-num">01</div>
+                    <div class="step-content">
+                        <h3>Migración a Cloud (AWS)</h3>
+                        <p>Trasladar el flujo local actual a la infraestructura en la nube:</p>
+                        <ul>
+                            <li>Exportación de la lógica del notebook a módulos Python estructurados (<code>.py</code>).</li>
+                            <li>Creación del bucket S3 para almacenamiento e histórico de crudos.</li>
+                            <li>Configuración de base de datos relacional PostgreSQL en AWS RDS.</li>
+                            <li>Empaquetamiento del ETL en funciones AWS Lambda orquestadas con EventBridge.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="step-block">
+                    <div class="step-num">02</div>
+                    <div class="step-content">
+                        <h3>Modelado de Forecasting y API</h3>
+                        <p>Generación de inteligencia y servicios de consulta:</p>
+                        <ul>
+                            <li>Diseño y entrenamiento de la red Transformer (Decoder-only) para temperatura.</li>
+                            <li>Creación del servidor back-end con FastAPI.</li>
+                            <li>Endpoints dedicados: <code>/ask</code> (NLP Q&A) y <code>/forecast</code>.</li>
+                            <li>Despliegue del back-end en AWS EC2.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            Generado automáticamente por Antigravity IDE • 2026
+        </footer>
+    </div>
+
+</body>
+</html>
