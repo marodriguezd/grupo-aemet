@@ -1,5 +1,4 @@
-# response = requests.get(url = "https://opendata.aemet.es/opendata/sh/6495d589")
-codigo = eval("""[ {
+[ {
   "latitud" : "394924N",
   "provincia" : "ILLES BALEARS",
   "altitud" : "490",
@@ -7359,5 +7358,4 @@ codigo = eval("""[ {
   "nombre" : "BELLO",
   "indsinop" : "",
   "longitud" : "012940W"
-} ]""")
-pd.json_normalize(codigo)
+} ]

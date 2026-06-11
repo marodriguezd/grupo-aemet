@@ -1,3 +1,7 @@
+# Esto pesa un cojón
+Tamara/*.json
+!Tamara/todas_estaciones.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
