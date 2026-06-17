@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Completo de Estudio AEMET ETL & PostgreSQL - Truji</title>
+    <!-- Google Fonts for premium typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PrismJS Theme for beautiful Python/SQL syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    
+    <style>
+        :root {
+            --primary: #0f172a;
+            --primary-light: #1e293b;
+            --secondary: #0ea5e9;
+            --secondary-hover: #38bdf8;
+            --accent: #f59e0b;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-dark: #0f172a;
+            --text-muted: #475569;
+            --border: #e2e8f0;
+            --code-bg: #1e1e24;
+            --code-text: #f8f8f2;
+            --badge-bg: #e0f2fe;
+            --badge-text: #0369a1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-dark);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Navigation */
+        aside {
+            width: 320px;
+            background-color: var(--primary);
+            color: white;
+            padding: 30px 20px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+        }
+
+        aside .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 35px;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 20px;
+        }
+
+        aside .brand i {
+            color: var(--secondary);
+            font-size: 1.6rem;
+        }
+
+        aside nav ul {
+            list-style: none;
+        }
+
+        aside nav li {
+            margin-bottom: 6px;
+        }
+
+        aside nav a {
+            color: #94a3b8;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.92rem;
+            transition: all 0.2s ease;
+        }
+
+        aside nav a:hover, aside nav a.active {
+            color: white;
+            background-color: var(--primary-light);
+        }
+
+        aside nav a.active {
+            border-left: 4px solid var(--secondary);
+            background-color: rgba(14, 165, 233, 0.1);
+        }
+
+        aside nav a i {
+            width: 18px;
+            font-size: 1.05rem;
+            text-align: center;
+            color: var(--secondary);
+        }
+
+        /* Main Content */
+        main {
+            margin-left: 320px;
+            flex: 1;
+            padding: 40px 60px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 16px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(14,165,233,0.15) 0%, rgba(14,165,233,0) 70%);
+            border-radius: 50%;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        header h1 span {
+            color: var(--secondary);
+        }
+
+        header p {
+            color: #cbd5e1;
+            font-size: 1.1rem;
+            max-width: 900px;
+        }
+
+        /* Sections and Cards */
+        section {
+            background-color: var(--bg-card);
+            padding: 40px;
+            border-radius: 16px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+            border: 1px solid var(--border);
+            scroll-margin-top: 20px;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+        }
+
+        h2 i {
+            color: var(--secondary);
+        }
+
+        h3 {
+            color: var(--primary-light);
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 30px 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        p {
+            margin-bottom: 20px;
+            color: #334155;
+            font-size: 1.05rem;
+        }
+
+        /* Custom lists */
+        ol, ul {
+            padding-left: 20px;
+            margin-bottom: 25px;
+        }
+
+        li {
+            margin-bottom: 12px;
+            font-size: 1.05rem;
+            color: #334155;
+        }
+
+        li strong {
+            color: var(--primary);
+        }
+
+        /* Code Block Styling overrides for PrismJS */
+        code {
+            font-family: 'JetBrains Mono', Courier, monospace;
+            background-color: #f1f5f9;
+            padding: 3px 6px;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            color: #0284c7;
+            font-weight: 500;
+        }
+
+        /* Container to protect button from Prism highlighting override */
+        .code-container {
+            position: relative;
+            margin: 25px 0;
+        }
+
+        .code-container .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 100;
+            background-color: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #e2e8f0;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .code-container .copy-btn:hover {
+            background-color: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+
+        pre {
+            margin: 0 !important;
+            border-radius: 12px !important;
+            border-left: 4px solid var(--secondary) !important;
+            background-color: #1e1e24 !important;
+            padding: 24px !important;
+        }
+
+        pre code {
+            background-color: transparent !important;
+            padding: 0 !important;
+            font-size: 0.92rem !important;
+            line-height: 1.55 !important;
+            font-family: 'JetBrains Mono', Courier, monospace !important;
+        }
+
+        /* Warning & Tip Boxes */
+        .callout {
+            padding: 20px;
+            border-radius: 12px;
+            margin: 25px 0;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .callout-icon {
+            font-size: 1.5rem;
+            margin-top: 2px;
+        }
+
+        .callout-content h4 {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+
+        .callout-content p {
+            margin-bottom: 0;
+            font-size: 0.98rem;
+        }
+
+        .callout.danger {
+            background-color: #fef2f2;
+            border-left: 5px solid #ef4444;
+            color: #991b1b;
+        }
+        .callout.danger .callout-icon, .callout.danger h4 { color: #ef4444; }
+
+        .callout.warning {
+            background-color: #fffbeb;
+            border-left: 5px solid #f59e0b;
+            color: #92400e;
+        }
+        .callout.warning .callout-icon, .callout.warning h4 { color: #f59e0b; }
+
+        .callout.info {
+            background-color: #f0fdf4;
+            border-left: 5px solid #22c55e;
+            color: #166534;
+        }
+        .callout.info .callout-icon, .callout.info h4 { color: #22c55e; }
+
+        /* Checklist */
+        .checklist-container {
+            background-color: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 20px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .checklist-item:last-child {
+            border-bottom: none;
+        }
+
+        .checklist-item input[type="checkbox"] {
+            margin-top: 5px;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--secondary);
+            cursor: pointer;
+        }
+
+        .checklist-item label {
+            font-size: 1.05rem;
+            cursor: pointer;
+            color: #334155;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .checklist-item input[type="checkbox"]:checked + label {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        /* Tabs or Modules indicators */
+        .badge {
+            display: inline-block;
+            background-color: var(--badge-bg);
+            color: var(--badge-text);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive Layout */
+        @media (max-width: 992px) {
+            aside {
+                width: 80px;
+                padding: 20px 10px;
+            }
+            aside .brand span, aside nav a span {
+                display: none;
+            }
+            aside .brand {
+                justify-content: center;
+                margin-bottom: 30px;
+            }
+            aside nav a {
+                justify-content: center;
+                padding: 12px;
+            }
+            main {
+                margin-left: 80px;
+                padding: 30px 20px;
+            }
+        }
+
+        /* Custom Password Modal styling */
+        #password-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(6px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #password-modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            padding: 35px 30px;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid var(--border);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        #password-modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-content h3 {
+            margin: 10px 0 8px 0;
+            justify-content: center;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            outline: none;
+            text-align: center;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .modal-content input:focus {
+            border-color: var(--secondary);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .modal-btn.cancel {
+            background-color: #f1f5f9;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .modal-btn.cancel:hover {
+            background-color: #e2e8f0;
+        }
+
+        .modal-btn.confirm {
+            background-color: var(--secondary);
+            border: none;
+            color: white;
+        }
+
+        .modal-btn.confirm:hover {
+            background-color: var(--secondary-hover);
+        }
+
+        .modal-error {
+            color: #ef4444;
+            font-size: 0.88rem;
+            margin-bottom: 12px;
+            display: none;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside>
+        <div class="brand">
+            <i class="fa-solid fa-cloud-sun-rain"></i>
+            <span>AEMET Maestro</span>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#intro" class="active"><i class="fa-solid fa-star"></i> <span>Metas y Objetivos</span></a></li>
+                <li><a href="#imports"><i class="fa-solid fa-cube"></i> <span>Imports y Dependencias</span></a></li>
+                <li><a href="#env"><i class="fa-solid fa-key"></i> <span>Carga del .env Seguro</span></a></li>
+                <li><a href="#funciones"><i class="fa-solid fa-gears"></i> <span>Definición de Funciones</span></a></li>
+                <li><a href="#doble-llamada"><i class="fa-solid fa-right-left"></i> <span>Doble Llamada API</span></a></li>
+                <li><a href="#inventario"><i class="fa-solid fa-list-ul"></i> <span>Inventario Estaciones</span></a></li>
+                <li><a href="#pruebas-diarias"><i class="fa-solid fa-list-ul"></i> <span>Datos Estaciones por fechas</span></a></li>
+                <li><a href="#historico"><i class="fa-solid fa-cloud-arrow-down"></i> <span>Ingesta Histórica</span></a></li>
+                <li><a href="#verificacion"><i class="fa-solid fa-folder-open"></i> <span>Verificación Disco</span></a></li>
+                <li><a href="#tablas-ddl"><i class="fa-solid fa-table"></i> <span>DDL Tablas SQL</span></a></li>
+                <li><a href="#carga-bd"><i class="fa-solid fa-database"></i> <span>Carga PostgreSQL</span></a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        <header>
+            <h1>⚡ Manual Maestro AEMET (Edición II)</h1>
+            <p>Estudio exhaustivo paso a paso de toda la lógica del notebook, interpretando celdas de código y explicaciones teóricas para la integración completa de APIs, Pandas y PostgreSQL con coloreado de código de sintaxis Python y SQL.</p>
+        </header>
+
+        <!-- SECCIÓN 1: INTRO -->
+        <section id="intro">
+            <span class="badge">Sección 1</span>
+            <h2><i class="fa-solid fa-star"></i> Proyecto AEMET - Resumen del ETL Climatológico</h2>
+            <p>Este documento consolida y explica detalladamente cada paso del flujo de trabajo desarrollado para interactuar con la API de la AEMET (Agencia Estatal de Meteorología), procesar, transformar y limpiar los registros climáticos para, finalmente, guardarlos de forma relacional y estructurada.</p>
+            
+            <h3>📋 10 Objetivos Académicos de esta Guía:</h3>
+            <ol>
+                <li><strong>Autenticación e Integración:</strong> Conectar a AEMET OpenData con API Key local segura.</li>
+                <li><strong>Catálogo de Estaciones:</strong> Obtener el maestro de sensores activos en España.</li>
+                <li><strong>Consulta de Prueba:</strong> Ejecutar descargas cortas previas para validar endpoints.</li>
+                <li><strong>Limpieza de Datos (ETL):</strong> Corregir decimales, nulos e inconsistencias en variables numéricas.</li>
+                <li><strong>Descarga Masiva Histórica:</strong> Bucle de 10 años gestionando el Rate Limiting.</li>
+                <li><strong>Exportación Local:</strong> Almacenar lotes en CSV y XLSX optimizando el uso de RAM.</li>
+                <li><strong>Visualización Resumen:</strong> Validar el comportamiento de las series temporales.</li>
+                <li><strong>Creación de Tablas:</strong> Definición del esquema DDL relacional.</li>
+                <li><strong>Carga del Maestro:</strong> Poblar el inventario de estaciones gestionando conflictos de clave.</li>
+                <li><strong>Carga del Histórico:</strong> Bulk upload de millones de mediciones en lotes anuales JSON.</li>
+            </ol>
+        </section>
+
+        <!-- SECCIÓN 2: IMPORTS -->
+        <section id="imports">
+            <span class="badge">Sección 2</span>
+            <h2><i class="fa-solid fa-cube"></i> Imports y Dependencias de Entorno</h2>
+            <p>El código requiere módulos específicos distribuidos en cinco categorías de trabajo para garantizar un rendimiento óptimo en memoria RAM:</p>
+            
+            <ul>
+                <li><strong>📁 Sistema Operativo, Rutas y Archivos:</strong>
+                    <ul>
+                        <li><code>os</code>: Gestionar directorios, rutas locales y variables del sistema.</li>
+                        <li><code>pathlib.Path</code>: Manejar rutas de archivos de forma robusta e independiente de la plataforma (Windows / Linux).</li>
+                        <li><code>zipfile</code>: Descomprimir y procesar archivos meteorológicos comprimidos en formato <code>.zip</code>.</li>
+                        <li><code>sys</code>: Controlar parámetros específicos del intérprete de Python y del sistema.</li>
+                        <li><code>subprocess</code>: Ejecutar herramientas, comandos o scripts externos directamente desde el flujo de ejecución.</li>
+                        <li><code>gc</code>: Liberar memoria explícitamente y gestionar el recolector de basura (<em>garbage collector</em>) para optimizar recursos en procesos pesados.</li>
+                        <li><code>pickle</code>: Serializar y deserializar objetos de Python para guardarlos y cargarlos desde archivos locales de forma rápida.</li>
+                    </ul>
+                </li>
+                <li><strong>⏱️ Control de Tiempo, Fechas y Predicciones:</strong>
+                    <ul>
+                        <li><code>time</code> / <code>sleep</code>: Añadir pausas controladas en la ejecución para evitar bloqueos por exceso de peticiones (<em>rate-limiting</em>).</li>
+                        <li><code>random</code>: Generar números pseudoaleatorios (ideal para añadir variabilidad o <em>jitter</em> a los tiempos de espera entre peticiones a la API).</li>
+                        <li><code>datetime</code> / <code>timedelta</code>: Manipular fechas para las predicciones e históricos meteorológicos de AEMET.</li>
+                        <li><code>calendar</code>: Operar con meses y días para la agregación de estadísticas climáticas.</li>
+                    </ul>
+                </li>
+                <li><strong>📊 Procesamiento y Análisis de Datos Climáticos:</strong>
+                    <ul>
+                        <li><code>pandas</code> (como <code>pd</code>): Cargar, limpiar y analizar series temporales, registros climáticos y tablas de datos.</li>
+                        <li><code>numpy</code> (como <code>np</code>): Realizar cálculos estadísticos vectorizados y operaciones matemáticas avanzadas.</li>
+                        <li><code>json</code>: Procesar y formatear las respuestas estructuradas obtenidas desde la API.</li>
+                    </ul>
+                </li>
+                <li><strong>🌐 Conexión con la API de AEMET y Entorno Seguro:</strong>
+                    <ul>
+                        <li><code>requests</code>: Realizar peticiones HTTP robustas a los servidores y endpoints de la API de AEMET.</li>
+                        <li><code>urllib.parse</code>: Formatear y codificar enlaces y parámetros de consulta de las URLs de forma correcta.</li>
+                        <li><code>dotenv.load_dotenv</code>: Cargar de forma segura y privada tu <code>API Key</code> desde un archivo local <code>.env</code> sin exponer credenciales en el código.</li>
+                    </ul>
+                </li>
+                <li><strong>🗄️ Base de Datos e Integración:</strong>
+                    <ul>
+                        <li><code>psycopg</code>: Conectar y operar de forma nativa con bases de datos relacionales PostgreSQL para almacenar los históricos climatológicos de forma permanente.</li>
+                    </ul>
+                </li>
+                <li><strong>🖥️ Visualización de Datos y Reportes:</strong>
+                    <ul>
+                        <li><code>IPython.display</code> (<code>Markdown</code>, <code>display</code>): Mostrar reportes enriquecidos, tablas con estilos HTML y formatos avanzados directamente dentro del entorno de Jupyter.</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <div class="callout warning">
+                <div class="callout-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="callout-content">
+                    <h4>Parche de ZipFile (Seek of closed file)</h4>
+                    <p>Cuando trabajamos con grandes volúmenes de datos y exportamos a libros Excel con Python 3.14+, se puede lanzar de forma esporádica un error por cierre asíncrono de recursos. Solucionamos esto parcheando de forma global el destructor <code>__del__</code> de la clase <code>zipfile.ZipFile</code>.</p>
+                </div>
+            </div>
+
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+                <pre><code class="language-python">import os
+from pathlib import Path
+import zipfile
+import sys
+import subprocess
+import gc
+import pickle
+import time
+from time import sleep
+import random
+from datetime import datetime, timedelta
+import calendar
+import pandas as pd
+import numpy as np
+import json
+import requests
+import urllib.parse
+from dotenv import load_dotenv
+import psycopg
+from IPython.display import Markdown, display
+
+# Inyección del Parche de control para evitar seek of closed file en Excel
+if not hasattr(zipfile.ZipFile, '_patched'):
+    try:
+        _orig_zipfile_del = zipfile.ZipFile.__del__
+        def _safe_zipfile_del(self):
+            try:
+                _orig_zipfile_del(self)
+            except (ValueError, AttributeError):
+                pass
+        zipfile.ZipFile.__del__ = _safe_zipfile_del
+        zipfile.ZipFile._patched = True
+    except AttributeError:
+        pass</code></pre>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 3: ENV SECURE -->
+        <section id="env">
+            <span class="badge">Sección 3</span>
+            <h2><i class="fa-solid fa-key"></i> Configuración y Carga de Parámetros Seguros</h2>
+            <p>Las contraseñas de las bases de datos y los tokens de AEMET nunca deben quedar escritos en texto plano dentro de los archivos del repositorio. Cargamos estas variables de manera segura utilizando <code>python-dotenv</code>.</p>
+            
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+                <pre><code class="language-python"># Buscamos el archivo .env para la API KEY de AEMET y la contraseña de conexion de Postrgee
+BASE_DIR = Path().resolve()
+env_path = BASE_DIR / '.env'
+
+# Carga del fichero .env para ver que tenemos conexion.
+print("Buscando el archivo .env en:", env_path)
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
+    print("El archivo .env se ha cargado.")
+else:
+    print("Ojo: No se encontró el .env en esta carpeta. Probamos con el entorno general.")
+    load_dotenv()
+
+#================================================#
+#          API KEY de AEMET Opendata             # 
+#================================================#
+
+# Sacamos la API Key
+API_KEY = os.getenv('AEMET_API_KEY')
+if not API_KEY:
+    raise RuntimeError('No se encontró AEMET_API_KEY en las variables de entorno.')
+else:
+    # Mostramos un trozo por seguridad
+    print(f"API Key encontrada: {API_KEY[:6]}...{API_KEY[-6:]}")
+
+#================================================#
+#          CONEXION A BD de POSTGREE             # 
+#================================#
+
+# Sacamos la contraseña de Postgree 
+PASS_OK = os.getenv('PASS_PG')
+if not PASS_OK:
+    raise RuntimeError('No se encontró PASS_original en las variables de entorno.')
+else:
+    # Mostramos un trozo por seguridad
+    print(f"Key Postgree encontrada: {PASS_OK[:3]}...{PASS_OK[-6:]}")
+
+# Sacamos puerto de Postgree
+PORT_OK = os.getenv('PORT_PG')
+if not PORT_OK:
+    raise RuntimeError('No se encontró Puerto_original en las variables de entorno.')
+else:
+    # Mostramos un trozo por seguridad
+    print(f"Port Postgree encontrada: {PORT_OK[:1]}...")
+
+# Sacamos base de datos de Postgree
+BD_OK = os.getenv('BD_PG')
+if not BD_OK:
+    raise RuntimeError('No se encontró base de datos en las variables de entorno.')
+else:
+    # Mostramos un trozo por seguridad
+    print(f"Base de datos Postgree encontrada: {BD_OK[:1]}...{BD_OK[-1:]}")</code></pre>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 4: FUNCIONES -->
+        <section id="funciones">
+            <span class="badge">Sección 4</span>
+            <h2><i class="fa-solid fa-gears"></i> Funciones ETL Implementadas</h2>
+            <p>A continuación se consolidan y explican todas las funciones de limpieza, obtención y formateo geográfico declaradas en el notebook:</p>
+
+            <h3 style="margin-top: 20px;"><i class="fa-solid fa-tower-broadcast"></i> Conexión y Descarga de Datos (API OpenData)</h3>
+            <ul style="margin-top: 10px;">
+                <li><strong><code>obtener_inventario_estaciones</code>:</strong> Descargar el catálogo oficial de todas las estaciones meteorológicas disponibles en la API de AEMET, gestionando reintentos con esperas exponenciales (<em>backoff</em>) ante bloqueos por exceso de peticiones.</li>
+                <li><strong><code>obtener_valores_climaticos_todas</code>:</strong> Solicitar y descargar los datos climáticos históricos diarios para todas las estaciones entre un rango de fechas específico en formato UTC, incorporando control robusto de fallos de red.</li>
+            </ul>
+
+            <h3 style="margin-top: 20px;"><i class="fa-solid fa-broom"></i> Limpieza, Conversión y Preparación</h3>
+            <ul style="margin-top: 10px;">
+                <li><strong><code>aemet_coordenada_a_float</code>:</strong> Traducir las coordenadas en formato sexagesimal de la API (ej. <code>402500N</code>, <code>034102W</code>) a floats decimales, aplicando el signo negativo si corresponde a las direcciones Sur u Oeste.</li>
+                <li><strong><code>limpiar_y_cargar_datos_fechas_todas_estaciones</code>:</strong> Procesar el JSON de datos meteorológicos diarios para construir un DataFrame limpio, homogeneizar tipos de datos, ajustar decimales, corregir precipitaciones inapreciables (<code>"Ip"</code> a <code>0.0</code>) y parsear variables horarias.</li>
+                <li><strong><code>limpiar_y_cargar_datos_estaciones</code>:</strong> Limpiar y estructurar el inventario maestro de estaciones en un DataFrame, asegurando la conversión de las coordenadas geográficas a float y la corrección de altitudes para la carga final en la base de datos.</li>
+            </ul>
+
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+                <pre><code class="language-python">#==================================================================================#
+#  => Función para traer el listado de todas las estaciones de API AEMET OpenData  # 
+#==================================================================================#
+#    Por defecto max_retries = 10 y base_delay = 5.0 para intentos de conexion     #
+#==================================================================================#
+def obtener_inventario_estaciones(max_retries=10, base_delay=5.0):
+    url_base = "https://opendata.aemet.es/opendata/api/valores/climatologicos/inventarioestaciones/todasestaciones"
+    delay = base_delay
+    print("Pidiendo el inventario a la API:", url_base)
+    
+    # Bucle de conexiones por si hay algun problema intenta 
+    for intento in range(max_retries):
+        try:
+            response = requests.get(url_base, headers=headers, timeout=30)
+            
+            # Si no tenemos permiso o no existe el endpoint, paramos
+            if response.status_code in [401, 403, 404]:
+                print(f"Error grave {response.status_code}, no se puede reintentar.")
+                return None
+
+            # Como ha dado 200 es ok la conexion
+            if response.status_code == 200:
+                meta_datos = response.json()
+                estado = meta_datos.get('estado')
+                print(f"Respuesta API: {meta_datos.get('descripcion')} (Estado: {meta_datos.get('estado')})")
+                
+                if meta_datos.get('estado') == 200:
+                    url_datos = meta_datos.get('datos')
+                    print("Tenemos enlace temporal, descargando los datos reales...")
+
+                if estado == 200:
+                    # Con la URL url_final de datos nos conectamos otra vez para que nos de los datos 
+                    url_final = meta_datos.get('datos')
+                    datos_response = requests.get(url_final, timeout=30)
+                    if datos_response.status_code == 200:
+                        return datos_response.json()
+                    elif datos_response.status_code in [401, 403, 404]:
+                        print(f"Error grave en datos {datos_response.status_code}, no reintentamos.")
+                        return None
+                    else:
+                        print(f"Intento {intento+1} fallido al descargar datos: {datos_response.status_code}")
+                elif estado in [401, 403, 404]:
+                    print(f"Error API: Estado {estado}: {meta_datos.get('descripcion')}. No se reintentará.")
+                    return None
+                elif estado == 429:
+                    print(f"Intento {intento+1}: La API dice Estado 429 (Límite superado).")
+                else:
+                    print(f"Intento {intento+1}: API devolvió Estado {estado}: {meta_datos.get('descripcion')}")
+            elif response.status_code == 429:
+                print(f"Intento {intento+1}: HTTP 429 (Muchas peticiones).")
+            else:
+                print(f"Intento {intento+1}: Código de red {response.status_code}")
+        except Exception as e:
+            print(f"Intento {intento+1}: Error de red/conexión: {e}")
+
+        # sigue intentandolo hasta que llegue al maximo intentos             
+        if intento < max_retries - 1:
+            print(f"Esperando {delay} segundos antes de reintentar...")
+            time.sleep(delay)
+            delay *= 2.0
+
+    print(f"Funcion [obtener_inventario_estaciones] No se pudo descargar el bloque tras {max_retries} intentos.")        
+    return None
+
+#==================================================================================================#
+#  => Función para traer el JSON de todas las estaciones de API AEMET OpenData entre dos fechas   # 
+#==================================================================================================#
+#   .-  Por defecto max_retries = 15 y base_delay = 5.0 para intentos de conexion                  #
+#   .-  fechaini = fecha_ini_utc (formato especial de la API 2026-05-01T00:00:00UTC                #
+#   .-  fechafin = fecha_ini_utc (formato especial de la API 2026-05-15T00:00:00UTC                #
+#==================================================================================================#
+def obtener_valores_climaticos_todas(fecha_ini_utc, fecha_fin_utc, max_retries=15, base_delay=5.0):
+    url_base = f"https://opendata.aemet.es/opendata/api/valores/climatologicos/diarios/datos/fechaini/{fecha_ini_utc}/fechafin/{fecha_fin_utc}/todasestaciones"
+    delay = base_delay
+
+    for intento in range(max_retries):
+        try:
+            response = requests.get(url_base, headers=headers, timeout=30)
+            if response.status_code in [401, 403, 404]:
+                print(f"Error grave {response.status_code}, no se puede reintentar.")
+                return None
+               
+            if response.status_code == 200:
+                meta_datos = response.json()
+                estado = meta_datos.get('estado')
+                
+                if estado == 200:
+                    url_final = meta_datos.get('datos')
+                    datos_response = requests.get(url_final, timeout=30)
+                    if datos_response.status_code == 200:
+                        return datos_response.json()
+                    elif datos_response.status_code in [401, 403, 404]:
+                        print(f"Error grave en datos {datos_response.status_code}, no reintentamos.")
+                        return None
+                    else:
+                        print(f"Intento {intento+1} fallido al descargar datos: {datos_response.status_code}")
+                elif estado in [401, 403, 404]:
+                    print(f"Error API: Estado {estado}: {meta_datos.get('descripcion')}. No se reintentará.")
+                    return None
+                elif estado == 429:
+                    print(f"Intento {intento+1}: La API dice Estado 429 (Límite superado).")
+                else:
+                    print(f"Intento {intento+1}: API devolvió Estado {estado}: {meta_datos.get('descripcion')}")
+            elif response.status_code == 429:
+                print(f"Intento {intento+1}: HTTP 429 (Muchas peticiones).")
+            else:
+                print(f"Intento {intento+1}: Código de red {response.status_code}")
+        except Exception as e:
+            print(f"Intento {intento+1}: Error de red/conexión: {e}")
+
+        if intento < max_retries - 1:
+            print(f"Esperando {delay} segundos antes de reintentar...")
+            time.sleep(delay)
+            delay *= 2.0
+            
+    print(f"No se pudo descargar el bloque tras {max_retries} intentos.")
+    return None
+
+#================================================================================#
+#  => Funcion para traducir latitud/longitud ("402500N","034102W") en un Float   # 
+#================================================================================#
+def aemet_coordenada_a_float(texto_coord):
+    if pd.isna(texto_coord) or not isinstance(texto_coord, str):
+        return None
+    
+    texto_coord = texto_coord.strip()
+    letra = texto_coord[-1].upper()
+    numeros = texto_coord[:-1]
+    numeros = numeros.zfill(6) 
+    
+    grados = float(numeros[0:2])
+    minutos = float(numeros[2:4]) 
+    segundos = float(numeros[4:6])
+    
+    decimal = grados + (minutos / 60.0) + (segundos / 3600.0)
+    
+    if letra in ['S', 'W', 'O']:
+        decimal = -decimal
+        
+    return decimal
+
+#==================================================================================================#
+#  => Función para limpiar el JSON de todas las estaciones de API AEMET OpenData entre dos fechas  # 
+#==================================================================================================#
+#   .- Ajustamos los datos para la carga 
+#==================================================================================================#
+def limpiar_y_cargar_datos_fechas_todas_estaciones(datos_json):
+    if not datos_json:
+        return pd.DataFrame()
+        
+    datos_lista = []
+    for dia in datos_json:
+        datos_lista.append({ "fecha"      : dia.get("fecha"),
+                             "indicativo" : dia.get("indicativo"),
+                             "nombre"     : dia.get("nombre"),
+                             "provincia"  : dia.get("provincia"),
+                             "altitud"    : dia.get("altitud"),
+                             "tmed"       : dia.get("tmed"),
+                             "prec"       : dia.get("prec"),
+                             "tmin"       : dia.get("tmin"),
+                             "horatmin"   : dia.get("horatmin"),
+                             "tmax"       : dia.get("tmax"),
+                             "horatmax"   : dia.get("horatmax"),
+                             "dir"        : dia.get("dir"),
+                             "velmedia"   : dia.get("velmedia"),
+                             "racha"      : dia.get("racha"),
+                             "horaracha"  : dia.get("horaracha"),
+                             "sol"        : dia.get("sol"),
+                             "presMax"    : dia.get("presMax"),
+                             "horaPresMax": dia.get("horaPresMax"),
+                             "presMin"    : dia.get("presMin"),
+                             "horaPresMin": dia.get("horaPresMin"),
+                             "hrMedia"    : dia.get("hrMedia"),
+                             "hrMax"      : dia.get("hrMax"),
+                             "horaHrMax"  : dia.get("horaHrMax"),
+                             "hrMin"      : dia.get("hrMin"),
+                             "horaHrMin"  : dia.get("horaHrMin")
+                           })
+
+    df = pd.DataFrame(datos_lista)
+
+    df["fecha"]      = pd.to_datetime(df["fecha"])
+    df["altitud"]    = pd.to_numeric(df["altitud"], errors="coerce")
+    df["indicativo"] = df["indicativo"].astype(str)
+    df["nombre"]     = df["nombre"].astype(str)
+    df["provincia"]  = df["provincia"].astype(str)
+    df["dir"]        = df["dir"].astype(str)
+    df["horaracha"]  = df["horaracha"].astype(str)
+
+    def a_float(columna):
+        if columna is None:
+            return np.nan
+        return columna.astype(str).str.replace(",", ".").replace("", "nan").astype(np.float32)
+
+    columnas_numericas = ["tmed", "tmin", "tmax", "velmedia", "racha", "sol", "presMax", "presMin", "hrMedia", "hrMax", "hrMin"]
+    for col in columnas_numericas:
+        if col in df.columns:
+            df[col] = a_float(df[col])
+
+    if "prec" in df.columns:
+        df["prec"] = df["prec"].astype(str).str.replace("Ip", "0.0").str.replace(",", ".").replace("", "0.0")
+        df["prec"] = pd.to_numeric(df["prec"], errors="coerce").astype(np.float32)
+
+    columnas_tiempo = ["horatmin", "horatmax", "horaHrMax", "horaHrMin"]
+    for col in columnas_tiempo:
+        if col in df.columns:
+            df[col] = df[col].astype(str).replace(["Varias", "nan", "None", ""], np.nan)
+            df[col] = pd.to_datetime(df[col], format="%H:%M", errors="coerce").dt.time
+
+    columnas_hora_sola = ["horaPresMax", "horaPresMin"]
+    for col in columnas_hora_sola:
+        if col in df.columns:
+            df[col] = df[col].astype(str).replace(["Varias", "nan", "None", ""], np.nan)
+            df[col] = pd.to_datetime(df[col], format="%H", errors="coerce").dt.time
+
+    return df
+
+#==================================================================================================#
+#  => Función para limpiar el JSON del maestro todas las estaciones de API AEMET OpenData         # 
+#==================================================================================================#
+#   .- Ajustamos los datos para la carga;                                                          #
+#      . Caso especifico de limpieza es la conversion de la latitud y longitud con la funcion      #
+#        "def aemet_coordenada_a_float()"  Ejemplo de como viene el dato [394924N , 025309E]       #
+#==================================================================================================#
+def limpiar_y_cargar_datos_estaciones(datos_json):
+     data = []
+     for estacion in datos_json:
+        data.append({ 'indicativo': estacion.get("indicativo"),
+                      'nombre'    : estacion.get("nombre"),
+                      'provincia' : estacion.get("provincia"),
+                      'latitud'   : estacion.get("latitud"),
+                      'longitud'  : estacion.get("longitud"),
+                      'altitud'   : estacion.get("altitud"),
+                      'indsinop'  : estacion.get("indsinop")
+                     })
+
+     df = pd.DataFrame(data)
+
+     df['latitud']  = df['latitud'].apply(aemet_coordenada_a_float).astype(np.float32)
+     df['longitud'] = df['longitud'].apply(aemet_coordenada_a_float).astype(np.float32)
+     df['altitud'] = pd.to_numeric(df['altitud'], errors='coerce')
+    
+     return df</code></pre>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 5: DOBLE LLAMADA -->
+        <section id="doble-llamada">
+            <span class="badge">Sección 5</span>
+            <h2><i class="fa-solid fa-right-left"></i> El Mecanismo de Doble Llamada API</h2>
+            <p>La API de AEMET OpenData funciona mediante solicitudes anidadas por motivos de caché y velocidad de descarga:</p>
+            <ol>
+                <li>Hacemos un <code>GET</code> enviando la API Key en las cabeceras <code>headers</code>.</li>
+                <li>La API procesa la consulta y responde con un JSON que contiene un enlace de descarga en la propiedad <code>datos</code>.</li>
+                <li>Efectuamos un segundo <code>GET</code> a la URL temporal para bajar el archivo JSON final que contiene las mediciones.</li>
+            </ol>
+            
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+                <pre><code class="language-python"># Cabeceras de autenticación reutilizables
+headers = {
+    'cache-control': "no-cache",
+    'api_key': API_KEY,
+    'accept': "application/json"
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 6: INVENTARIO Y LIMPIEZA -->
+        <section id="inventario">
+            <span class="badge">Sección 6</span>
+            <h2><i class="fa-solid fa-list-ul"></i> Obtener y Limpiar el Inventario Completo de Estaciones</h2>
+            <p>Para realizar cualquier consulta histórica, necesitamos conocer el identificador único (<code>indicativo</code>) de la estación meteorológica. El endpoint <code>/api/valores/climatologicos/inventarioestaciones/todasestaciones</code> nos devuelve el catálogo completo de las estaciones activas en España. Para ello, primero descargamos los datos en crudo del catálogo maestro:</p>
+            
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+                <pre><code class="language-python"># Probamos a traer las estaciones
+estaciones = obtener_inventario_estaciones()
+
+if estaciones:
+    print(f"Total estaciones cargadas: {len(estaciones)}")
+    df_estaciones = pd.DataFrame(estaciones)
+    print("Primeras 5 estaciones:")
+else:
+    print("No se pudo obtener el inventario. Revisa la clave API.")</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px;"><i class="fa-solid fa-broom"></i> Limpieza y Transformación Geográfica del Maestro</h3>
+            <p>Una vez obtenido el catálogo, aplicamos la transformación de coordenadas sexagesimales a float decimales y corregimos altitudes inconsistentes utilizando nuestra función de limpieza:</p>
+
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+                <pre><code class="language-python"># Aplicamos la limpieza de datos y la transformacion.(latitud y longitud)
+df_estaciones = limpiar_y_cargar_datos_estaciones(estaciones)
+
+# Mostramos las primeras 5 filas limpias
+df_estaciones.head(5)</code></pre>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 7: PRUEBA DIARIA Y PIPELINE ETL (PASOS 4 Y 5) -->
+        <section id="pruebas-diarias">
+            <span class="badge">Sección 7</span>
+            <h2><i class="fa-solid fa-vial"></i> Obtener y Limpiar datos entre fechas de todas las estaciones</h2>
+            
+            <p>Para verificar el flujo de descarga de datos de sensores diarios, consultamos una ventana reducida de fechas del 1 al 15 de mayo de 2026 para todas las estaciones. El formato del endpoint requerido por la API de AEMET es:</p>
+            <p><code>/api/valores/climatologicos/diarios/datos/fechaini/{fecha_ini_utc}/fechafin/{fecha_fin_utc}/todasestaciones</code></p>
+            
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+                <pre><code class="language-python"># Hacemos una prueba en la primera quincena de Mayo 2026
+ini_prueba = "2026-05-01T00:00:00UTC"
+fin_prueba = "2026-05-15T00:00:00UTC"
+
+print("Probando descarga para todas las estaciones primera quincena de mayo 2026...")
+climaticos_prueba = obtener_valores_climaticos_todas(ini_prueba, fin_prueba)
+
+if climaticos_prueba:
+    print(f"¡Funciona! Hemos descargado {len(climaticos_prueba)} filas diarias.")
+    print("Ejemplo del primer registro en crudo:")
+    print(json.dumps(climaticos_prueba[0], indent=2, ensure_ascii=False))
+else:
+    print("No se han recibido datos. Revisa fechas y tu API Key.")</code></pre>
+            </div>
+
+            <!-- Paso 5 anidado -->
+            <div id="etl-pipeline" style="scroll-margin-top: 20px; margin-top: 40px; border-top: 1px solid var(--border); padding-top: 30px;">
+                <h3><i class="fa-solid fa-broom"></i> Limpieza y Transformación de Datos (Pipeline ETL)</h3>
+                <p>Los datos crudos de AEMET vienen completamente en formato de texto (strings). Además, la representación decimal utiliza la coma española (<code>,</code>) en lugar del punto (<code>.</code>), lo cual impide operaciones aritméticas en Pandas. Implementamos la transformación de variables mediante el siguiente flujo:</p>
+                <ol style="margin-top: 10px; margin-bottom: 20px;">
+                    <li>Extrae los campos de interés de cada registro.</li>
+                    <li>Convierte el campo <code>fecha</code> a tipo <code>datetime</code> de Pandas.</li>
+                    <li>Normaliza las representaciones numéricas: reemplaza las comas por puntos en variables continuas y las convierte a tipo <code>float32</code> o <code>int</code> de forma segura.</li>
+                    <li>Convierte las horas de temperaturas/presiones máximas y mínimas a objetos <code>datetime.time</code>, gestionando de forma robusta valores de texto anómalos como 'Varias' o nulos.</li>
+                    <li>Limpia el campo de precipitación (<code>prec</code>), convirtiendo el valor especial "Ip" (inapreciable) a <code>0.0</code> para poder realizar cálculos y sumas acumuladas consistentes.</li>
+                </ol>
+
+                <div class="code-container">
+                    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+                    <pre><code class="language-python"># Aplicamos la limpieza de datos y la transformacion.(latitud y longitud)
+df_fechas_estaciones_final = limpiar_y_cargar_datos_fechas_todas_estaciones(climaticos_prueba)
+
+# Mostramos las primeras 15 filas
+df_fechas_estaciones_final.head(15)</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 9: DESCARGA MASIVA -->
+        <section id="historico">
+            <span class="badge">Sección 9</span>
+            <h2><i class="fa-solid fa-cloud-arrow-down"></i> Bucle de Extracción Histórica (10 Años)</h2>
+            <p>Para obtener un dataset consistente e histórico, se implementa un bucle recursivo que descarga datos año por año y mes por mes, ordenando cronológicamente el resultado y forzando la liberación de RAM con el recolector de basura <code>gc.collect()</code> para evitar saturar el sistema.</p>
+            
+            <div class="callout danger">
+                <div class="callout-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="callout-content">
+                    <h4>⚠️ IMPORTANTE - Límites de la API de AEMET:</h4>
+                    <p>AEMET limita estrictamente la cantidad de llamadas simultáneas. Si no se manejan pausas, la API responderá con errores <code>HTTP 429</code> (Demasiadas peticiones) o bloqueará el token de usuario.</p>
+                    <p>Para evitar esto, se implementa el siguiente control de velocidad (Rate Limiting):</p>
+                    <ul style="margin-top: 10px; margin-bottom: 0px; padding-left: 20px;">
+                        <li><strong>Pausa de 60 segundos</strong> entre cada año consultado.</li>
+                        <li><strong>Pausa de 1.5 segundos</strong> entre cada mes consultado.</li>
+                        <li><strong>Pausa de 40 minutos</strong> de seguridad si el tiempo total de ejecución supera los 5 minutos de forma continua.</li>
+                        <li><strong>Saltado dinámico de meses futuros</strong> para evitar llamadas inútiles sobre periodos que aún no han ocurrido.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="callout info">
+                <div class="callout-icon"><i class="fa-solid fa-circle-info"></i></div>
+                <div class="callout-content">
+                    <h4>Nota de control</h4>
+                    <p>Por defecto, esta descarga está pre-configurada para extraer los <strong>últimos 3 años</strong> (2024-2026) para optimizar el tiempo de prueba de este notebook. Si deseas obtener la serie histórica completa de los últimos 10 años, simplemente modifica la variable <code>AÑOS_A_CONSULTAR = 10</code>.</p>
+                </div>
+            </div>
+            
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+                <pre><code class="language-python">fecha_fin_global = datetime(2026, 6, 13)
+DIAS_A_CONSULTAR = 3650  # 10 años
+fecha_inicio_global = fecha_fin_global - timedelta(days=DIAS_A_CONSULTAR - 1)
+
+OUTPUT_CSV_DIR = BASE_DIR / 'sheets' / 'csv'
+OUTPUT_XLSX_DIR = BASE_DIR / 'sheets' / 'xlsx'
+OUTPUT_CSV_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_XLSX_DIR.mkdir(parents=True, exist_ok=True)
+
+año_inicio = fecha_inicio_global.year
+año_fin = fecha_fin_global.year
+
+print(f"Descargando históricos desde {año_inicio} hasta {año_fin}...")
+
+for año in range(año_fin, año_inicio - 1, -1):
+    ini_año = max(datetime(año, 1, 1), fecha_inicio_global)
+    fin_año = min(datetime(año, 12, 31), fecha_fin_global)
+    
+    df_año = pd.DataFrame()
+    fecha_actual = fin_año
+    lote_size = 15
+    dias_procesados = 0
+    total_dias = (fin_año - ini_año).days + 1
+    
+    while dias_procesados < total_dias:
+        dias_restantes = total_dias - dias_procesados
+        dias_lote = min(lote_size, dias_restantes)
+        fecha_ini_lote = fecha_actual - timedelta(days=dias_lote - 1)
+        
+        ini_str = fecha_ini_lote.strftime("%Y-%m-%dT00:00:00UTC")
+        fin_str = fecha_actual.strftime("%Y-%m-%dT23:59:59UTC")
+        
+        # Pausa preventiva de 2 segundos para evitar HTTP 429
+        time.sleep(2.0)
+        
+        datos_json = obtener_valores_climaticos_todas(ini_str, fin_str)
+        if datos_json:
+            df_lote = limpiar_y_cargar_datos_fechas_todas_estaciones(datos_json)
+            df_año = pd.concat([df_año, df_lote], ignore_index=True)
+            
+        dias_procesados += dias_lote
+        fecha_actual = fecha_ini_lote - timedelta(days=1)
+        
+    if not df_año.empty:
+        df_año = df_año.sort_values(by='fecha', ascending=True)
+        csv_path = OUTPUT_CSV_DIR / f'climaticos_{año}.csv'
+        excel_path = OUTPUT_XLSX_DIR / f'climaticos_{año}.xlsx'
+        
+        df_año.to_csv(csv_path, index=False)
+        df_año.to_excel(excel_path, index=False)
+        
+        # Recolector de basura para liberar RAM
+        del df_año
+        gc.collect()</code></pre>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 10: DISK CHECK -->
+        <section id="verificacion">
+            <span class="badge">Sección 10</span>
+            <h2><i class="fa-solid fa-folder-open"></i> Verificación de Archivos y Espacio en Disco</h2>
+            <p>Se lista el tamaño en MB ocupado por cada lote anual generado para validar que los ficheros se crearon con datos válidos:</p>
+
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+                <pre><code class="language-python">print("Archivos CSV creados:")
+for f in sorted(OUTPUT_CSV_DIR.glob('climaticos_*')):
+    size_mb = f.stat().st_size / (1024 * 1024)
+    print(f" - csv/{f.name} ({size_mb:.2f} MB)")
+
+print("\nArchivos Excel creados:")
+for f in sorted(OUTPUT_XLSX_DIR.glob('climaticos_*')):
+    size_mb = f.stat().st_size / (1024 * 1024)
+    print(f" - xlsx/{f.name} ({size_mb:.2f} MB)")</code></pre>
+            </div>
+
+            <div class="callout info">
+                <div class="callout-icon"><i class="fa-solid fa-circle-info"></i></div>
+                <div class="callout-content">
+                    <h4>Variabilidad de Estaciones por Lote</h4>
+                    <p>Aunque el inventario reporta unas 920 estaciones, en la práctica el número de reportes quincenales reales oscila en torno a las 812 estaciones diarias. Esto se debe a averías puntuales, mantenimientos o controles de calidad que retrasan la publicación de datos.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 11: DDL -->
+        <section id="tablas-ddl">
+            <span class="badge">Sección 11</span>
+            <h2><i class="fa-solid fa-table"></i> Esquema DDL para la Base de Datos</h2>
+            <p>Estructura DDL en SQL para crear el esquema en la base de datos PostgreSQL local (<code>aemet</code>):</p>
+            
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+                <pre><code class="language-sql">-- Base de Datos
+CREATE DATABASE aemet;
+
+-- Tabla 1: Catálogo Maestro de Estaciones
+CREATE TABLE IF NOT EXISTS estaciones (
+    indicativo VARCHAR(10) PRIMARY KEY,
+    nombre VARCHAR(150),
+    provincia VARCHAR(100),
+    latitud FLOAT,
+    longitud FLOAT,
+    altitud INT,
+    indsinop VARCHAR(10)
+);
+
+-- Tabla 2: Historial de Mediciones Diarias
+CREATE TABLE IF NOT EXISTS datos_climaticos (
+    fecha DATE,
+    indicativo VARCHAR(10) REFERENCES estaciones(indicativo),
+    nombre VARCHAR(150),
+    provincia VARCHAR(255),
+    altitud INT,
+    tmed FLOAT,
+    prec FLOAT,
+    tmin FLOAT,
+    horatmin TIME,
+    tmax FLOAT,
+    horatmax TIME,
+    dir FLOAT,
+    velmedia FLOAT,
+    racha FLOAT,
+    horaracha VARCHAR(15),
+    sol FLOAT,
+    presMax FLOAT,
+    horaPresMax TIME,
+    presMin FLOAT,
+    horaPresMin TIME,
+    hrMedia FLOAT,
+    hrMax FLOAT,
+    horaHrMax TIME,
+    hrMin FLOAT,
+    horaHrMin TIME,
+    PRIMARY KEY (indicativo, fecha)
+);</code></pre>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 12: DATABASE LOAD -->
+        <section id="carga-bd">
+            <span class="badge">Sección 12</span>
+            <h2><i class="fa-solid fa-database"></i> Conexión e Ingesta PostgreSQL</h2>
+            <p>Primero, cargamos el inventario de estaciones en la base de datos utilizando el mapeador <code>ON CONFLICT DO NOTHING</code> para no arrojar fallos de colisión de clave primaria.</p>
+            
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+                <pre><code class="language-python"># 1. URI de Conexión Dinámica
+DATABASE_URI = f"postgresql://postgres:{PASS_OK}@localhost:{PORT_OK}/{BD_OK}"
+
+# Probamos a traer las estaciones
+estaciones = obtener_inventario_estaciones()
+
+if estaciones:
+    print(f"Total estaciones cargadas: {len(estaciones)}")
+    df_estaciones = pd.DataFrame(estaciones)  
+else:
+    print("No se pudo obtener el inventario. Revisa la clave API.")
+
+# Aplicamos la limpieza de datos y la transformacion.(latitud y longitud)
+df_estaciones = limpiar_y_cargar_datos_estaciones(estaciones)
+
+# 2. Conectamos a Postgree y cargamos el maestro de estaciones
+with psycopg.connect(DATABASE_URI) as conn:
+     with conn.cursor() as cursor:
+          data_estaciones = df_estaciones.replace({np.nan : None}).values.tolist() 
+          cursor.executemany(
+              query="""
+                 INSERT INTO estaciones (indicativo, nombre, provincia, latitud, longitud, altitud, indsinop)
+                 VALUES (%s, %s, %s, %s, %s, %s, %s)
+                 ON CONFLICT (indicativo) DO NOTHING;
+              """,
+              params_seq=data_estaciones
+          )
+          print("Maestro de estaciones cargado con éxito en PostgreSQL.")</code></pre>
+            </div>
+
+            <h3>Exportación Anual y Bulk Insert en PostgreSQL</h3>
+            <p>Para acelerar el volcado, transformamos los DataFrames en archivos JSON locales independientes por año, que luego leemos recursivamente para insertarlos en bloque con la sentencia <code>executemany</code>:</p>
+            
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+                <pre><code class="language-python"># Ajustamos las fechas para la descarga histórica (10 años en bloques)
+fecha_fin_global = datetime(2026, 6, 13)
+DIAS_A_CONSULTAR = 3650  # 10 años
+fecha_inicio_global = fecha_fin_global - timedelta(days=DIAS_A_CONSULTAR - 1)
+
+# Carpetas de salida
+OUTPUT_JSON_DIR = BASE_DIR / 'sheets' / 'json'
+OUTPUT_JSON_DIR.mkdir(parents=True, exist_ok=True)
+
+año_inicio = fecha_inicio_global.year
+año_fin = fecha_fin_global.year
+
+print(f"Empezando la descarga masiva por años desde {año_inicio} hasta {año_fin}...")
+
+for año in range(año_inicio, año_fin + 1):
+
+    csv_path = OUTPUT_CSV_DIR / f"climaticos_{año}.csv"
+    print (csv_path) 
+    
+    # cargamos el csv de cada año directamente
+    df_año = pd.read_csv(csv_path)    
+
+    # lo convertimos a json en formato de registros
+    json_data = df_año.to_json(orient='records', force_ascii=False)
+    
+    # lo formateamos para que sea legible por humanos (comentar estas dos lineas si prefieres ahorrar espacio)
+    json_data = json.dumps(json.loads(json_data), indent=4, ensure_ascii=False)
+
+    # guardamos cada año en un archivo independiente
+    json_path = OUTPUT_JSON_DIR / f"climaticos_{año}.json"
+    print (json_path)
+    with open(f"{json_path}", "w", encoding="utf-8") as file:
+         file.write(json_data)     
+
+# Bulk Insert desde JSONs anuales
+query_insert = """
+    INSERT INTO datos_climaticos (
+        fecha, indicativo, nombre, provincia, altitud, tmed, prec, tmin, horatmin, 
+        tmax, horatmax, dir, velmedia, racha, horaracha, sol, presMax, horaPresMax,
+        presMin, horaPresMin, hrMedia, hrMax, horaHrMax, hrMin, horaHrMin
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ON CONFLICT (indicativo, fecha) DO NOTHING;
+"""
+
+columnas_insert = [
+    'fecha', 'indicativo', 'nombre', 'provincia', 'altitud', 'tmed', 'prec', 'tmin', 'horatmin',
+    'tmax', 'horatmax', 'dir', 'velmedia', 'racha', 'horaracha', 'sol', 'presMax', 'horaPresMax',
+    'presMin', 'horaPresMin', 'hrMedia', 'hrMax', 'horaHrMax', 'hrMin', 'horaHrMin'
+]
+
+with psycopg.connect(DATABASE_URI) as conn:
+    with conn.cursor() as cursor:
+        for año in range(año_inicio, año_fin + 1):
+            json_file = OUTPUT_JSON_DIR / f"climaticos_{año}.json"
+            if not json_file.exists():
+                continue
+                
+            print(f"Volcando {json_file.name} en BD...")
+            with open(json_file, "r", encoding="utf-8") as f:
+                datos_json = json.load(f)
+                
+            df_año = limpiar_y_cargar_datos_fechas_todas_estaciones(datos_json)
+            df_año = df_año[columnas_insert].replace({np.nan: None})
+            
+            # Formateamos los registros como tuplas
+            registros = list(df_año.itertuples(index=False, name=None))
+            cursor.executemany(query_insert, registros)
+            print(f"Cargados {len(registros)} registros para el año {año}")</code></pre>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- PASSWORD MODAL -->
+    <div id="password-modal">
+        <div class="modal-content">
+            <div style="font-size: 2.5rem; margin-bottom: 15px;">🔐</div>
+            <h3 style="color: var(--primary); font-weight: 700;">Estudio Protegido</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">Introduce la contraseña de estudio para poder copiar el bloque de código.</p>
+            <input type="password" id="modal-password-input" placeholder="Contraseña">
+            <div id="modal-error-msg" class="modal-error">❌ Contraseña incorrecta. Inténtalo de nuevo.</div>
+            <div class="modal-actions">
+                <button id="modal-cancel-btn" class="modal-btn cancel">Cancelar</button>
+                <button id="modal-confirm-btn" class="modal-btn confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PrismJS Libraries for live formatting of CodeBlocks -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+
+    <script>
+        // Cadena ofuscada para comprobar la contraseña 'truji' de forma segura
+        const CLAVE_OFUSCADA = 'aWp1cnQ='; // Corresponde al reverso de 'truji' codificado en Base64
+
+        function verificarPassword(texto) {
+            try {
+                // Invertimos la cadena introducida y la pasamos a Base64 para comparar
+                const procesada = btoa(texto.split('').reverse().join(''));
+                return procesada === CLAVE_OFUSCADA;
+            } catch(e) {
+                return false;
+            }
+        }
+
+        // Active Sidebar navigation highlight on scroll
+        const links = document.querySelectorAll('aside nav a');
+        const sections = document.querySelectorAll('section');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (window.pageYOffset >= (sectionTop - 150)) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            links.forEach(a => {
+                a.classList.remove('active');
+                if (a.getAttribute('href') === `#${current}`) {
+                    a.classList.add('active');
+                }
+            });
+        });
+
+        // Custom modal controls for password dialog
+        let activeCopyButton = null;
+
+        function copyCode(button) {
+            activeCopyButton = button;
+            const modal = document.getElementById('password-modal');
+            const input = document.getElementById('modal-password-input');
+            const errorMsg = document.getElementById('modal-error-msg');
+            
+            // Clear previous states
+            input.value = '';
+            errorMsg.style.display = 'none';
+            
+            // Show modal
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.classList.add('active');
+                input.focus();
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('password-modal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+            activeCopyButton = null;
+        }
+
+        function handlePasswordSubmit() {
+            const input = document.getElementById('modal-password-input');
+            const errorMsg = document.getElementById('modal-error-msg');
+            
+            // Verificamos la contraseña de forma local y segura
+            if (verificarPassword(input.value)) {
+                if (activeCopyButton) {
+                    const container = activeCopyButton.parentElement;
+                    const code = container.querySelector('pre code');
+                    const textToCopy = code.innerText;
+
+                    // Attempt using Clipboard API
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(textToCopy)
+                            .then(() => showSuccess(activeCopyButton))
+                            .catch(err => fallbackCopy(activeCopyButton, textToCopy));
+                    } else {
+                        fallbackCopy(activeCopyButton, textToCopy);
+                    }
+                }
+                closeModal();
+            } else {
+                errorMsg.style.display = 'block';
+                input.select();
+                input.focus();
+            }
+        }
+
+        // Attach event listeners for custom modal buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const cancelBtn = document.getElementById('modal-cancel-btn');
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            const passwordInput = document.getElementById('modal-password-input');
+            const modal = document.getElementById('password-modal');
+
+            cancelBtn.addEventListener('click', closeModal);
+            confirmBtn.addEventListener('click', handlePasswordSubmit);
+            
+            passwordInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    handlePasswordSubmit();
+                } else if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+
+            // Close modal when clicking outside
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+        });
+
+        function fallbackCopy(button, text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showSuccess(button);
+                } else {
+                    console.error('No se pudo copiar el texto.');
+                }
+            } catch (err) {
+                console.error('Fallo en el método de copia alternativo: ', err);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function showSuccess(button) {
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fa-solid fa-check"></i> ¡Copiado!';
+            setTimeout(() => {
+                button.innerHTML = originalText;
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
