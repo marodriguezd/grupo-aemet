@@ -12,3 +12,9 @@ En esta página podrá acceder, en forma gráfica y en tabla, a las observacione
 En el mapa aparecen estaciones con valor númerico y otras representadas por un punto. En las primeras, al pasar el ratón, aparece un desplegable con la información completa de la estación. Las estaciones representadas por un punto son estaciones de la red climatológica, con transmisión de datos superior a la hora, por lo que al seleccionarlas pueden no aparecer los últimos datos.
 
 Los datos presentados han sido únicamente sometidos a controles automáticos de calidad en tiempo real, por lo que no puede garantizarse la ausencia de errores.
+
+
+
+
+
+Solo Carmen: git add . && git commit -m "carmen: puesta al dia" && git push 
