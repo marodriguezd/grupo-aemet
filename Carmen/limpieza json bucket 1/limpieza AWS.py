@@ -41,3 +41,8 @@ for registro in datos:
 print("\nValores faltantes por columna:")
 for columna in sorted(columnas):
     print(f"{columna:15} -> {faltantes[columna]}")
+    
+#Algunas conclusiones por el camino:
+#Variables muy completas que merece la pena conservar: fecha, indicativo, nombre, provincia, altitud, tmax, tmin, tmed, prec, hrMedia, hrMax, hrMin.
+#variables completas que pueden ser interesantes para mantener: velmedia, racha, dir, horaracha.
+#Variables con muchos huecos: presMax, presMin, horapresMax, horapresMin, sol, horaPIntMax.
