@@ -18,3 +18,29 @@ Los datos presentados han sido únicamente sometidos a controles automáticos de
 
 
 Solo Carmen: git add . && git commit -m "carmen: puesta al dia" && git push 
+
+
+
+ACTUALIZACION
+
+Infraestructura actual
+
+Bucket:
+- carmen-proyecto-aemet-2025
+
+Carpeta:
+- csv/
+
+Datos disponibles:
+- climaticos_2016.csv
+- ...
+- climaticos_2026.csv
+
+Acceso:
+- AWS CLI configurado
+- boto3 configurado
+
+ETL:
+- Descarga datos de AEMET
+- Genera CSV
+- Sube automáticamente a S3
