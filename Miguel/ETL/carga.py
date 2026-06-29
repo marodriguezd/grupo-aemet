@@ -5,8 +5,10 @@ import time
 import gc
 import zipfile
 import pandas as pd
+import boto3
 from datetime import datetime, timedelta
 from pathlib import Path
+
 
 # Tuve que meter este parche raro de zipfile porque da error al cerrar archivos excel en python 3.14+
 # 'ValueError: seek of closed file'. Evita que se raye si se ejecuta varias veces.
@@ -117,6 +119,17 @@ def integrar_y_guardar_datos(df_lote, anio):
         # Guardamos en CSV
         df_combinado.to_csv(csv_path, index=False)
         print(f"Guardado CSV en: {csv_path}")
+        #subida a S3 
+        s3 = boto3.client("s3")
+
+        bucket = "carmen-proyecto-aemet-2025"
+
+        s3.upload_file(
+            str(csv_path),
+            bucket,
+            f"csv/climaticos_{anio}.csv"
+        )
+        print(f"Subido a S3: csv/climaticos_{anio}.csv")
 
         # Guardamos en Excel con openpyxl
         with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
