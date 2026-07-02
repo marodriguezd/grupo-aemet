@@ -1,0 +1,76 @@
+
+import os
+
+import pickle
+import numpy as np
+from typing import List
+from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Request
+
+import os
+import pickle
+from typing import List
+import numpy as np
+from fastapi import APIRouter, HTTPException, Path
+from pydantic import BaseModel, Field
+
+router_temp_min = APIRouter(prefix="/modelos_min", tags=["modelos_min"])
+cache_modelos_min = {}
+
+# Ruta absoluta base corregida
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+class PredictionInput(BaseModel):
+    features: List[float] = Field(..., description="Lista de características numéricas para el modelo")
+
+def obtener_modelo_min(idema: str):
+    if idema in cache_modelos_min:
+        return cache_modelos_min[idema]
+    
+    # CORRECCIÓN: Uso de ruta absoluta
+    ruta_archivo = os.path.join(BASE_DIR, "modelos_min", f"modelo_{idema}_min.pkl")
+    
+    if not os.path.exists(ruta_archivo):
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Modelo para IDEMA '{idema}' no encontrado en el servidor."
+        )
+    
+    try:
+        with open(file=ruta_archivo, mode="rb") as file:
+            modelo = pickle.load(file)
+        cache_modelos_min[idema] = modelo
+        return modelo
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error al cargar el archivo de modelo: {str(e)}"
+        )
+@router_temp_min.post(
+    path="/{idema}/predict", 
+    summary="Predicción de temperatura mínima", 
+    description="Genera la predicción de temperatura mínima usando el modelo específico de una estación IDEMA."
+)
+def prediccion_temp_min_endpoint(
+    idema: str = Path(..., description="Código identificador de la estación (IDEMA)"), 
+    input_data: PredictionInput = None
+):
+    modelo = obtener_modelo_min(idema)
+    
+    try:
+        # Convertir a matriz 2D para la predicción
+        X = np.array([input_data.features])
+        prediccion_numpy = modelo.predict(X)
+        prediccion = prediccion_numpy.tolist()
+        
+        return {
+            "status": "success",
+            "idema": idema,
+            "mensaje": "Predicción de temperatura mínima obtenida correctamente",
+            "prediccion": prediccion
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error interno al ejecutar la predicción del modelo: {str(e)}"
+        )
