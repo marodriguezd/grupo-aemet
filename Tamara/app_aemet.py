@@ -1,0 +1,186 @@
+
+
+import numpy as np
+
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+import seaborn as sns
+
+import plotly.express as px
+import plotly.graph_objects as go
+
+import httpx
+import streamlit as st
+import requests
+import pandas as pd
+from datetime import date
+
+
+
+
+
+# ====================================================================
+# INSTRUCCIONES DE EJECUCIÓN:
+# 1. Abre tu terminal en la carpeta donde está este script.
+# 2. Ejecuta el siguiente comando:
+#    streamlit run app_aemet.py
+# 3. Se abrirá automáticamente una pestaña en tu navegador web.
+
+
+
+st.set_page_config(layout="wide")
+
+FASTAPI_URL = st.secrets.get("FASTAPI_URL", "http://127.0.0.1:8000")
+
+with st.sidebar:
+    st.header("Configuración de Consulta")
+    
+    opcion = st.selectbox(
+        "Selecciona el tipo de consulta:",
+        ["Temperatura Máxima", "Temperatura Mínima", "Histórico"]
+    )
+    
+    st.divider()
+
+    if opcion == "Temperatura Máxima":
+        st.subheader("Parámetros: Temp. Máxima")
+        idema = st.text_input("Código de la estación (IDEMA):", value="0009X")
+        st.markdown("**Características para el modelo:**")
+        features_input = st.text_input(
+            "Introduce el valor numérico requerido:", 
+            value="15.5"
+        )
+        ejecutar_consulta = st.button("Generar Predicción Máxima")
+
+    elif opcion == "Temperatura Mínima":
+        st.subheader("Parámetros: Temp. Mínima")
+        idema = st.text_input("Código de la estación (IDEMA):", value="0009X")
+        st.markdown("**Características para el modelo:**")
+        features_input = st.text_input(
+            "Introduce el valor numérico requerido:", 
+            value="5.2"
+        )
+        ejecutar_consulta = st.button("Generar Predicción Mínima")
+
+    elif opcion == "Histórico":
+        st.subheader("Parámetros: Histórico")
+        idema = st.text_input("Código de la estación (IDEMA):", value="0009X")
+        fecha_inicio = st.date_input("Fecha de inicio:", value=date(2025, 1, 1))
+        fecha_fin = st.date_input("Fecha de fin:", value=date(2025, 1, 31))
+        ejecutar_consulta = st.button("Consultar Histórico")
+
+st.title("Panel de Control - AEMET")
+st.text("Exploración de datos históricos de temperaturas y ejecución de predicciones basadas en modelos entrenados.")
+st.divider()
+
+if opcion == "Temperatura Máxima":
+    st.header("Predicción de Temperatura Máxima")
+    
+    if ejecutar_consulta:
+        with st.spinner("Ejecutando modelo de predicción máxima..."):
+            try:
+                lista_features = [float(x.strip()) for x in features_input.split(",") if x.strip()]
+                payload = {"features": lista_features}
+                
+                enlace_completo = f"{FASTAPI_URL}/modelos_max/{idema}/predict" 
+                res = requests.post(enlace_completo, json=payload)
+                
+                if res.status_code == 200:
+                    data = res.json()
+                    st.success(data["mensaje"])
+                    
+                    valor_predicho = data["prediccion"]
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric(label=f"Predicción Máxima ({data['idema']})", value=f"{valor_predicho:.2f} °C")
+                    
+                    with col2:
+                        df_grafico = pd.DataFrame({
+                            "Métricas": ["Variable de Entrada", "Predicción Final"],
+                            "Valores (°C)": [lista_features[0], valor_predicho]
+                        })
+                        st.bar_chart(df_grafico, x="Métricas", y="Valores (°C)")
+                        
+                    with st.expander("Ver respuesta completa de la API"):
+                        st.json(data)
+                else:
+                    error_data = res.json()
+                    st.error(f"Error {res.status_code}: {error_data.get('detail', 'Error desconocido')}")
+            except ValueError:
+                st.error("Por favor, asegúrate de introducir un valor numérico válido.")
+            except Exception as e:
+                st.error(f"Error inesperado: {e}")
+
+elif opcion == "Temperatura Mínima":
+    st.header("Predicción de Temperatura Mínima")
+    
+    if ejecutar_consulta:
+        with st.spinner("Ejecutando modelo de predicción mínima..."):
+            try:
+                lista_features = [float(x.strip()) for x in features_input.split(",") if x.strip()]
+                payload = {"features": lista_features}
+                
+                enlace_completo = f"{FASTAPI_URL}/modelos_min/{idema}/predict" 
+                res = requests.post(enlace_completo, json=payload)
+                
+                if res.status_code == 200:
+                    data = res.json()
+                    st.success(data["mensaje"])
+                    
+                    valor_predicho = data["prediccion"]
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric(label=f"Predicción Mínima ({data['idema']})", value=f"{valor_predicho:.2f} °C")
+                    
+                    with col2:
+                        df_grafico = pd.DataFrame({
+                            "Métricas": ["Variable de Entrada", "Predicción Final"],
+                            "Valores (°C)": [lista_features[0], valor_predicho]
+                        })
+                        st.bar_chart(df_grafico, x="Métricas", y="Valores (°C)")
+                        
+                    with st.expander("Ver respuesta completa de la API"):
+                        st.json(data)
+                else:
+                    error_data = res.json()
+                    st.error(f"Error {res.status_code}: {error_data.get('detail', 'Error desconocido')}")
+            except ValueError:
+                st.error("Por favor, asegúrate de introducir un valor numérico válido.")
+            except Exception as e:
+                st.error(f"Error inesperado: {e}")
+
+elif opcion == "Histórico":
+    st.header("Consulta de Registros Históricos")
+    
+    if ejecutar_consulta:
+        with st.spinner("Consultando base de datos a través de FastAPI..."):
+            try:
+                str_inicio = fecha_inicio.strftime("%Y-%m-%d")
+                str_fin = fecha_fin.strftime("%Y-%m-%d")
+                
+                enlace_completo = f"{FASTAPI_URL}/historico/obtener_historico?id={idema}&fecha_inicio={str_inicio}&fecha_fin={str_fin}" 
+                res = requests.get(enlace_completo) 
+                
+                if res.status_code == 200:
+                    data = res.json()
+                    st.success("Registros históricos recuperados de forma exitosa.")
+                    
+                    if "registros" in data:
+                        df_historico = pd.DataFrame(data["registros"])
+                        df_historico["fecha"] = pd.to_datetime(df_historico["fecha"])
+                        
+                        st.subheader(f"Evolución Climatológica de la Estación {idema}")
+                        st.line_chart(df_historico, x="fecha", y=["tmax", "tmed", "tmin"])
+                        
+                        with st.expander("Ver tabla completa de registros filtrados"):
+                            st.dataframe(df_historico, use_container_width=True)
+                    else:
+                        st.info("Visualización genérica del diccionario de datos recibido:")
+                        st.json(data)
+                else:
+                    error_data = res.json()
+                    st.error(f"Error {res.status_code}: {error_data.get('detail', 'Error desconocido')}")
+            except Exception as e:
+                st.error(f"Error inesperado en la aplicación: {e}")
