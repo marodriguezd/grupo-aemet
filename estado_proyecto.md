@@ -8,10 +8,10 @@ Este documento resume el análisis del estado del proyecto comparando los requis
 
 | Componente | Propuesta Teórica ([aemet.md](file:///home/marodriguezd/Github/grupo-aemet/aemet.md)) | Implementación Actual en [Miguel/](file:///home/marodriguezd/Github/grupo-aemet/Miguel/) | Estado |
 | :--- | :--- | :--- | :--- |
-| **Infraestructura Cloud** | Bucket S3 para crudos y PostgreSQL en AWS RDS. | Almacenamiento local estructurado en disco. Configuración de API Key local mediante `.env`. | **Pendiente de migración a AWS** |
-| **Pipeline de Ingesta** | AWS Lambda con EventBridge (diario) y trigger de S3. | Jupyter Notebook local ([AEMET_Resumen editable.ipynb](file:///home/marodriguezd/Github/grupo-aemet/Miguel/AEMET_Resumen%20editable.ipynb)) que consume la API directamente. | **Completado (Local)** |
-| **Pipeline ETL & Limpieza** | Transformación en AWS Lambda de JSON a PostgreSQL. | Ingesta y ETL local refinado. Convierte strings a numéricos, limpia formatos decimales y nulos meteorológicos. | **Completado (Local)** |
-| **Almacenamiento Físico** | Base de Datos PostgreSQL. | Ficheros anuales ordenados y limpios guardados en `/sheets/csv/` y `/sheets/xlsx/`. | **Completado (Local)** |
+| **Infraestructura Cloud** | Bucket S3 para crudos y PostgreSQL en AWS RDS. | Bucket S3 creado y Pipeline subido. BBDD RDS activa. Configuración de API Key en AWS. | **Completado (AWS)** |
+| **Pipeline de Ingesta** | AWS Lambda con EventBridge (diario) y trigger de S3. | Funciones Python modulares desplegadas y corriendo en AWS Lambda mediante EventBridge. | **Completado (AWS)** |
+| **Pipeline ETL & Limpieza** | Transformación en AWS Lambda de JSON a PostgreSQL. | Script ETL orquestado en AWS cargando la BBDD remota. | **Completado (AWS)** |
+| **Almacenamiento Físico** | Base de Datos PostgreSQL. | Datos persistiéndose en PostgreSQL remoto (RDS). | **Completado (AWS)** |
 | **Modelo de Forecasting** | Modelo decoder-only de Transformers para temperatura. | Sin empezar. | **Pendiente** |
 | **Servicios API** | FastAPI desplegado en EC2 con endpoints `/ask` y `/forecast`. | Sin empezar. | **Pendiente** |
 | **Interfaz de Usuario** | Dashboard en Streamlit para EDA interactivo y predicciones. | Sin empezar. | **Pendiente** |
@@ -44,10 +44,10 @@ La lógica desarrollada en [AEMET_Resumen editable.ipynb](file:///home/marodrigu
 
 ## 🚀 Próximas Fases Prioritarias
 
-1. **Migración Cloud (Fase 01 - AWS)**:
-   - Exportar las funciones del notebook a scripts modulares de Python (`.py`).
-   - Crear el bucket S3 de almacenamiento de crudos y la instancia de base de datos PostgreSQL en AWS RDS.
-   - Empaquetar el pipeline de descarga y ETL en funciones AWS Lambda.
+1. **Despliegue e Integración Streamlit (Fase 02 - Web)**:
+   - Integrar definitivamente el endpoint `/ask` (LangChain + Gemini) en el Frontend.
+   - Apuntar las rutas de Streamlit a la IP pública de la instancia AWS EC2.
+   - Desplegar la aplicación en Streamlit Community Cloud o EC2 para acceso global.
 
 2. **Modelado y FastAPI (Fase 02)**:
    - Iniciar el diseño y entrenamiento del modelo de forecasting.

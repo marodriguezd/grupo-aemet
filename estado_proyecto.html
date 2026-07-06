@@ -348,26 +348,26 @@
                         <tr>
                             <td><strong>Infraestructura Cloud</strong></td>
                             <td>Bucket S3 para crudos y PostgreSQL en AWS RDS.</td>
-                            <td>Almacenamiento local estructurado en disco. API Key en <code>.env</code>.</td>
-                            <td><span class="badge badge-cloud">Pendiente migrar a AWS</span></td>
+                            <td>S3 y BD RDS activas y conectadas en AWS. API Key en variables de entorno.</td>
+                            <td><span class="badge badge-completed">Completado (AWS)</span></td>
                         </tr>
                         <tr>
                             <td><strong>Pipeline de Ingesta</strong></td>
                             <td>AWS Lambda con EventBridge (diario) y trigger de S3.</td>
-                            <td>Notebook local <a href="file:///home/marodriguezd/Github/grupo-aemet/Miguel/AEMET_Resumen%20editable.ipynb" style="color: var(--accent-cyan); text-decoration: none;">AEMET_Resumen editable.ipynb</a>.</td>
-                            <td><span class="badge badge-completed">Completado (Local)</span></td>
+                            <td>Desplegado en AWS Lambda corriendo mediante triggers automáticos.</td>
+                            <td><span class="badge badge-completed">Completado (AWS)</span></td>
                         </tr>
                         <tr>
                             <td><strong>Pipeline ETL & Limpieza</strong></td>
                             <td>Transformación en AWS Lambda de JSON a PostgreSQL.</td>
-                            <td>Ingesta y ETL local refinado (strings a numéricos, decimales, nulos).</td>
-                            <td><span class="badge badge-completed">Completado (Local)</span></td>
+                            <td>Script ETL en Lambda procesando y escribiendo en la BBDD RDS PostgreSQL.</td>
+                            <td><span class="badge badge-completed">Completado (AWS)</span></td>
                         </tr>
                         <tr>
                             <td><strong>Almacenamiento Físico</strong></td>
                             <td>Base de Datos PostgreSQL.</td>
-                            <td>Ficheros anuales ordenados en <code>/sheets/csv/</code> y <code>/sheets/xlsx/</code>.</td>
-                            <td><span class="badge badge-completed">Completado (Local)</span></td>
+                            <td>Datos históricos integrados remotamente en la base de datos AWS RDS.</td>
+                            <td><span class="badge badge-completed">Completado (AWS)</span></td>
                         </tr>
                         <tr>
                             <td><strong>Modelo de Forecasting</strong></td>
@@ -446,13 +446,13 @@
                 <div class="step-block">
                     <div class="step-num">01</div>
                     <div class="step-content">
-                        <h3>Migración a Cloud (AWS)</h3>
-                        <p>Trasladar el flujo local actual a la infraestructura en la nube:</p>
+                        <h3>Integración Frontend y Despliegue (Streamlit)</h3>
+                        <p>Últimos pasos para la visualización del usuario final:</p>
                         <ul>
-                            <li>Exportación de la lógica del notebook a módulos Python estructurados (<code>.py</code>).</li>
-                            <li>Creación del bucket S3 para almacenamiento e histórico de crudos.</li>
-                            <li>Configuración de base de datos relacional PostgreSQL en AWS RDS.</li>
-                            <li>Empaquetamiento del ETL en funciones AWS Lambda orquestadas con EventBridge.</li>
+                            <li>Integrar formalmente el endpoint <code>/ask</code> NLP de Langchain con la interfaz de Streamlit.</li>
+                            <li>Sustituir endpoints locales (localhost) por la IP pública de la instancia AWS EC2.</li>
+                            <li>Desplegar la web analítica en Streamlit Community Cloud o EC2 para acceso público.</li>
+                            <li>Afinar y pulir las gráficas de EDA para la presentación del Bootcamp.</li>
                         </ul>
                     </div>
                 </div>
