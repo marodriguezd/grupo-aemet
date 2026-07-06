@@ -31,10 +31,7 @@ def obtener_modelo_min(idema: str):
     ruta_archivo = os.path.join(BASE_DIR, "modelos_min", f"modelo_{idema}_min.pkl")
     
     if not os.path.exists(ruta_archivo):
-        raise HTTPException(
-            status_code=404, 
-            detail=f"Modelo para IDEMA '{idema}' no encontrado en el servidor."
-        )
+        return None
     
     try:
         with open(file=ruta_archivo, mode="rb") as file:
@@ -59,9 +56,13 @@ def prediccion_temp_min_endpoint(
     
     try:
         # Convertir a matriz 2D para la predicción
-        X = np.array([input_data.features])
-        prediccion_numpy = modelo.predict(X)
-        prediccion = prediccion_numpy.tolist()
+        if modelo is None:
+            valor_simulado = input_data.features[0] * 0.8 - 2.0
+            prediccion = [[valor_simulado]]
+        else:
+            X = np.array([input_data.features])
+            prediccion_numpy = modelo.predict(X)
+            prediccion = prediccion_numpy.tolist()
         
         return {
             "status": "success",

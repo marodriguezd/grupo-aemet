@@ -1,8 +1,9 @@
 
 import pandas as pd
 from fastapi import FastAPI , HTTPException ,   Request, HTTPException
-from router.temperatura_minima import router_temp_min
-from router.temperatura_maxima import router_temp_max
+from temperatura_minima import router_temp_min
+from temperatura_maxima import router_temp_max
+from historico import router_historico
 import os
 from contextlib import asynccontextmanager
 import pickle
@@ -30,3 +31,5 @@ def bienvenida():
 
 app.include_router(router = router_temp_max)         
 app.include_router(router = router_temp_min)     
+app.include_router(router = router_historico)
+

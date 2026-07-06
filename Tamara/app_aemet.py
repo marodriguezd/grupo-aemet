@@ -30,7 +30,7 @@ from datetime import date
 
 st.set_page_config(layout="wide")
 
-FASTAPI_URL = st.secrets.get("FASTAPI_URL", "http://127.0.0.1:8000")
+FASTAPI_URL = "http://127.0.0.1:8000"
 
 with st.sidebar:
     st.header("Configuración de Consulta")
@@ -90,17 +90,10 @@ if opcion == "Temperatura Máxima":
                     st.success(data["mensaje"])
                     
                     valor_predicho = data["prediccion"]
+                    if isinstance(valor_predicho, list): valor_predicho = valor_predicho[0]
+                    if isinstance(valor_predicho, list): valor_predicho = valor_predicho[0]
                     
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric(label=f"Predicción Máxima ({data['idema']})", value=f"{valor_predicho:.2f} °C")
-                    
-                    with col2:
-                        df_grafico = pd.DataFrame({
-                            "Métricas": ["Variable de Entrada", "Predicción Final"],
-                            "Valores (°C)": [lista_features[0], valor_predicho]
-                        })
-                        st.bar_chart(df_grafico, x="Métricas", y="Valores (°C)")
+                    st.metric(label=f"Predicción Máxima ({data['idema']})", value=f"{valor_predicho:.2f} °C")
                         
                     with st.expander("Ver respuesta completa de la API"):
                         st.json(data)
@@ -129,17 +122,10 @@ elif opcion == "Temperatura Mínima":
                     st.success(data["mensaje"])
                     
                     valor_predicho = data["prediccion"]
+                    if isinstance(valor_predicho, list): valor_predicho = valor_predicho[0]
+                    if isinstance(valor_predicho, list): valor_predicho = valor_predicho[0]
                     
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric(label=f"Predicción Mínima ({data['idema']})", value=f"{valor_predicho:.2f} °C")
-                    
-                    with col2:
-                        df_grafico = pd.DataFrame({
-                            "Métricas": ["Variable de Entrada", "Predicción Final"],
-                            "Valores (°C)": [lista_features[0], valor_predicho]
-                        })
-                        st.bar_chart(df_grafico, x="Métricas", y="Valores (°C)")
+                    st.metric(label=f"Predicción Mínima ({data['idema']})", value=f"{valor_predicho:.2f} °C")
                         
                     with st.expander("Ver respuesta completa de la API"):
                         st.json(data)
@@ -176,6 +162,9 @@ elif opcion == "Histórico":
                         
                         with st.expander("Ver tabla completa de registros filtrados"):
                             st.dataframe(df_historico, use_container_width=True)
+                            
+                        with st.expander("Ver respuesta completa de la API"):
+                            st.json(data)
                     else:
                         st.info("Visualización genérica del diccionario de datos recibido:")
                         st.json(data)
