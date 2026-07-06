@@ -236,3 +236,7 @@ reference.jpg
 # Agent memory and style guides (no subir a repo)
 MEMORY.md
 AGENTS.md
+
+# Modelos de Machine Learning entrenados
+modelos_max/
+modelos_min/
