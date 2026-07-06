@@ -45,7 +45,7 @@ def cargar_datos_rds():
         with psycopg.connect(DSN) as conn:
             with conn.cursor() as cur:
                 print("Descargando datos históricos (esto puede tardar unos minutos)...")
-                query = "SELECT indicativo as id, tmed, tmax, tmin FROM datos_climaticos;"
+                query = "SELECT indicativo as id, tmed, tmax, tmin FROM datos_climaticos order by fecha;"
                 cur.execute(query)
                 data = cur.fetchall()
                 
