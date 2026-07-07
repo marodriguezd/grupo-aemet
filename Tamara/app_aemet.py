@@ -32,6 +32,11 @@ st.set_page_config(layout="wide")
 
 FASTAPI_URL = "http://127.0.0.1:8000"
 
+
+ultimo_valor_max=df[tmax].iloc[-1]
+
+ultimo_valor_min=df[tmin].iloc[-1]
+
 with st.sidebar:
     st.header("Configuración de Consulta")
     
@@ -48,7 +53,7 @@ with st.sidebar:
         st.markdown("**Características para el modelo:**")
         features_input = st.text_input(
             "Introduce el valor numérico requerido:", 
-            value="15.5"
+            value=str(ultimo_valor_max)
         )
         ejecutar_consulta = st.button("Generar Predicción Máxima")
 
@@ -58,7 +63,7 @@ with st.sidebar:
         st.markdown("**Características para el modelo:**")
         features_input = st.text_input(
             "Introduce el valor numérico requerido:", 
-            value="5.2"
+            value=str(ultimo_valor_min)
         )
         ejecutar_consulta = st.button("Generar Predicción Mínima")
 
