@@ -18,8 +18,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import root_mean_squared_error
 
 # ---- Constantes de rutas ----
-MIGUEL_DIR = Path(__file__).resolve().parent.parent
-CSV_DIR = MIGUEL_DIR / "sheets" / "csv"
+MIGUEL_DIR = Path(__file__).resolve().parent
 MODELOS_MAX_DIR = MIGUEL_DIR / "modelos_max"
 MODELOS_MIN_DIR = MIGUEL_DIR / "modelos_min"
 
