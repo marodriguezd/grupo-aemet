@@ -18,7 +18,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import root_mean_squared_error
 
 # ---- Constantes de rutas ----
-# Obtenemos la ruta absoluta de la carpeta 'Miguel' (padre de ETL)
 MIGUEL_DIR = Path(__file__).resolve().parent.parent
 CSV_DIR = MIGUEL_DIR / "sheets" / "csv"
 MODELOS_MAX_DIR = MIGUEL_DIR / "modelos_max"
@@ -38,53 +37,52 @@ def asegurar_directorios():
     os.makedirs(MODELOS_MIN_DIR, exist_ok=True)
     print(f"Directorios de salida verificados:\n- {MODELOS_MAX_DIR}\n- {MODELOS_MIN_DIR}")
 
-def cargar_datos_rds():
-    """Conecta a la base de datos AWS RDS y extrae el histórico completo."""
-    print("Conectando a AWS RDS...")
+def entrenar_modelos():
+    """Entrena los modelos estación por estación para no saturar la RAM."""
+    asegurar_directorios()
+    
+    print("Conectando a AWS RDS para obtener lista de estaciones...")
     try:
         with psycopg.connect(DSN) as conn:
             with conn.cursor() as cur:
-                print("Descargando datos históricos (esto puede tardar unos minutos)...")
-                query = "SELECT indicativo as id, tmed, tmax, tmin FROM datos_climaticos order by fecha;"
-                cur.execute(query)
-                data = cur.fetchall()
-                
-        df_completo = pd.DataFrame(data, columns=["id", "tmed", "tmax", "tmin"])
-        
-        # Asegurar tipos numéricos por si vienen como texto desde la BD
-        df_completo['tmed'] = pd.to_numeric(df_completo['tmed'], errors='coerce')
-        df_completo['tmax'] = pd.to_numeric(df_completo['tmax'], errors='coerce')
-        df_completo['tmin'] = pd.to_numeric(df_completo['tmin'], errors='coerce')
-        
-        print(f"\nSe han cargado un total de {len(df_completo)} registros desde la nube de AWS.")
-        return df_completo
+                cur.execute("SELECT DISTINCT indicativo FROM datos_climaticos;")
+                estaciones = [row[0] for row in cur.fetchall()]
     except Exception as e:
         print(f"Error al conectar con AWS RDS: {e}")
-        return pd.DataFrame()
+        return
 
-def entrenar_modelos():
-    """Agrupa por estación y entrena los modelos de temp máxima y mínima."""
-    df = cargar_datos_rds()
-    if df.empty:
-        return
+    print(f"\nSe encontraron {len(estaciones)} estaciones.")
+    print("Iniciando entrenamiento masivo (cargando datos estación por estación para ahorrar RAM)...")
     
-    asegurar_directorios()
-    
-    # Nos quedamos con las columnas que nos importan
-    cols_necesarias = ["id", "tmed", "tmax", "tmin"]
-    if not all(col in df.columns for col in cols_necesarias):
-        print("Faltan columnas necesarias en los datos CSV.")
-        return
-        
     estaciones_procesadas = 0
-    print("\nIniciando entrenamiento masivo de modelos por estación...")
     
-    estaciones_unicas = df["id"].unique()
-    for idema in estaciones_unicas:
+    for idema in estaciones:
+        if not idema:
+            continue
+            
         idema_limpio = str(idema).strip().replace("/", "_").replace("\\", "_")
         
-        # Filtramos por estación y eliminamos filas con Nulos en las variables clave
-        df_bucle = df[df["id"] == idema][cols_necesarias].dropna()
+        # Obtenemos solo los datos de esta estación para que no explote la memoria RAM
+        try:
+            with psycopg.connect(DSN) as conn:
+                with conn.cursor() as cur:
+                    query = "SELECT tmed, tmax, tmin FROM datos_climaticos WHERE indicativo = %s ORDER BY fecha;"
+                    cur.execute(query, (idema,))
+                    data = cur.fetchall()
+        except Exception as e:
+            print(f"Error al descargar datos de la estación {idema}: {e}")
+            continue
+            
+        if not data:
+            continue
+            
+        df_bucle = pd.DataFrame(data, columns=["tmed", "tmax", "tmin"])
+        
+        # Asegurar tipos numéricos y quitar nulos
+        df_bucle['tmed'] = pd.to_numeric(df_bucle['tmed'], errors='coerce')
+        df_bucle['tmax'] = pd.to_numeric(df_bucle['tmax'], errors='coerce')
+        df_bucle['tmin'] = pd.to_numeric(df_bucle['tmin'], errors='coerce')
+        df_bucle = df_bucle.dropna()
         
         # Necesitamos un mínimo de datos (ej: 5) para que XGBoost no falle
         if len(df_bucle) < 5:
@@ -101,7 +99,6 @@ def entrenar_modelos():
         modelo_max = xgb.XGBRegressor(random_state=42, n_estimators=200, learning_rate=0.01)
         modelo_max.fit(X_train_max, y_train_max)
         
-        # Guardar archivo .pkl
         ruta_max = MODELOS_MAX_DIR / f"modelo_{idema_limpio}_max.pkl"
         with open(ruta_max, "wb") as f_max:
             pickle.dump(modelo_max, f_max)
@@ -117,7 +114,6 @@ def entrenar_modelos():
         modelo_min = xgb.XGBRegressor(random_state=42, n_estimators=200, learning_rate=0.01)
         modelo_min.fit(X_train_min, y_train_min)
         
-        # Guardar archivo .pkl
         ruta_min = MODELOS_MIN_DIR / f"modelo_{idema_limpio}_min.pkl"
         with open(ruta_min, "wb") as f_min:
             pickle.dump(modelo_min, f_min)
