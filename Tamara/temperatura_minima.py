@@ -1,21 +1,25 @@
 
 import os
-
 import pickle
 import numpy as np
-from typing import List
-from pydantic import BaseModel
-from fastapi import APIRouter, HTTPException, Request
-
-import os
-import pickle
-from typing import List
-import numpy as np
-from fastapi import APIRouter, HTTPException, Path
 from pydantic import BaseModel, Field
+from fastapi import APIRouter, HTTPException, Request, Path
+import pandas as pd
+from typing import List
+import psycopg
 
 router_temp_min = APIRouter(prefix="/modelos_min", tags=["modelos_min"])
 cache_modelos_min = {}
+
+user = "postgres"
+password = "postgres"
+host = "localhost"
+port = "5432"
+database = "aemet"
+
+dsn = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+
+print(dsn)
 
 # Ruta absoluta base corregida
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -26,13 +30,13 @@ class PredictionInput(BaseModel):
 def obtener_modelo_min(idema: str):
     if idema in cache_modelos_min:
         return cache_modelos_min[idema]
-    
+
     # CORRECCIÓN: Uso de ruta absoluta
     ruta_archivo = os.path.join(BASE_DIR, "modelos_min", f"modelo_{idema}_min.pkl")
-    
+
     if not os.path.exists(ruta_archivo):
         return None
-    
+
     try:
         with open(file=ruta_archivo, mode="rb") as file:
             modelo = pickle.load(file)
@@ -40,30 +44,41 @@ def obtener_modelo_min(idema: str):
         return modelo
     except Exception as e:
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail=f"Error al cargar el archivo de modelo: {str(e)}"
         )
-@router_temp_min.post(
-    path="/{idema}/predict", 
-    summary="Predicción de temperatura mínima", 
+@router_temp_min.get(
+    path="/{idema}/predict",
+    summary="Predicción de temperatura mínima",
     description="Genera la predicción de temperatura mínima usando el modelo específico de una estación IDEMA."
 )
 def prediccion_temp_min_endpoint(
-    idema: str = Path(..., description="Código identificador de la estación (IDEMA)"), 
-    input_data: PredictionInput = None
+    idema: str = Path(..., description="Código identificador de la estación (IDEMA)"),
+    # input_data: PredictionInput = None
 ):
+
+    with psycopg.connect(dsn) as conn:
+        with conn.cursor() as cursor:
+
+            cursor.execute(query = f"SELECT tmin FROM datos_climaticos WHERE id = '{idema}' ORDER BY fecha DESC LIMIT 1;")
+
+            input_data = cursor.fetchall()[0][0]
+
     modelo = obtener_modelo_min(idema)
-    
+
     try:
-        # Convertir a matriz 2D para la predicción
+    # Convertir a matriz 2D para la predicción
         if modelo is None:
-            valor_simulado = input_data.features[0] * 0.8 - 2.0
-            prediccion = [[valor_simulado]]
+            raise HTTPException(
+                status_code=404,
+                detail=f"No se encontró un modelo para la estación con IDEMA: {idema}"
+            )
+
         else:
             X = np.array([input_data.features])
             prediccion_numpy = modelo.predict(X)
             prediccion = prediccion_numpy.tolist()
-        
+
         return {
             "status": "success",
             "idema": idema,
@@ -72,6 +87,6 @@ def prediccion_temp_min_endpoint(
         }
     except Exception as e:
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail=f"Error interno al ejecutar la predicción del modelo: {str(e)}"
         )
