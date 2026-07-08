@@ -238,6 +238,4 @@ MEMORY.md
 AGENTS.md
 
 # Modelos de Machine Learning entrenados
-modelos_max/
-modelos_min/
-*.pkl
+# (Dejamos de ignorarlos. Ojo: la carpeta puede llegar a pesar 1 GB en total)
