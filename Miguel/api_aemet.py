@@ -7,9 +7,6 @@ from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 import psycopg
 from datetime import date
-import os
-import pickle
-import numpy as np
 
 app = FastAPI(title="AEMET", description="API de AEMET", version="1.0")
 
@@ -21,29 +18,6 @@ USER = "aemet2026"
 PASSWORD = "mondongo-dai07rt-aemet-2026"
 DSN = f"postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}"
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-cache_modelos_max = {}
-cache_modelos_min = {}
-
-def obtener_modelo(idema: str, tipo: str):
-    cache = cache_modelos_max if tipo == "max" else cache_modelos_min
-    if idema in cache:
-        return cache[idema]
-    
-    ruta_archivo = os.path.join(BASE_DIR, f"modelos_{tipo}", f"modelo_{idema}_{tipo}.pkl")
-    
-    if not os.path.exists(ruta_archivo):
-        return None
-    
-    try:
-        with open(file=ruta_archivo, mode="rb") as file:
-            modelo = pickle.load(file)
-        cache[idema] = modelo
-        return modelo
-    except Exception as e:
-        print(f"Error al cargar el archivo de modelo {tipo}: {str(e)}")
-        return None
-
 class InputFeatures(BaseModel):
     features: list
 
@@ -53,46 +27,26 @@ def bienvenida():
 
 @app.post("/modelos_max/{idema}/predict")
 def prediccion_temp_max(idema: str, input_data: InputFeatures):
-    """Devuelve predicción de temp máxima o simulación si no hay modelo."""
+    """Simula una predicción de temperatura máxima."""
     print(f"Calculando temp máxima para {idema}...")
-    modelo = obtener_modelo(idema, "max")
-    
-    if modelo is None:
-        valor_simulado = input_data.features[0] * 1.5 + 5.0
-        prediccion = [[valor_simulado]]
-        mensaje = "Predicción simulada (modelo no encontrado)"
-    else:
-        X = np.array([input_data.features])
-        prediccion = modelo.predict(X).tolist()
-        mensaje = "Predicción real calculada correctamente"
-        
+    valor_simulado = input_data.features[0] * 1.5 + 5.0
     return {
         "status": "success",
         "idema": idema,
-        "mensaje": mensaje,
-        "prediccion": prediccion
+        "mensaje": "Predicción de temperatura máxima calculada",
+        "prediccion": [[valor_simulado]]
     }
 
 @app.post("/modelos_min/{idema}/predict")
 def prediccion_temp_min(idema: str, input_data: InputFeatures):
-    """Devuelve predicción de temp mínima o simulación si no hay modelo."""
+    """Simula una predicción de temperatura mínima."""
     print(f"Calculando temp mínima para {idema}...")
-    modelo = obtener_modelo(idema, "min")
-    
-    if modelo is None:
-        valor_simulado = input_data.features[0] * 0.8 - 2.0
-        prediccion = [[valor_simulado]]
-        mensaje = "Predicción simulada (modelo no encontrado)"
-    else:
-        X = np.array([input_data.features])
-        prediccion = modelo.predict(X).tolist()
-        mensaje = "Predicción real calculada correctamente"
-        
+    valor_simulado = input_data.features[0] * 0.8 - 2.0
     return {
         "status": "success",
         "idema": idema,
-        "mensaje": mensaje,
-        "prediccion": prediccion
+        "mensaje": "Predicción de temperatura mínima calculada",
+        "prediccion": [[valor_simulado]]
     }
 
 @app.get("/historico/obtener_historico")
