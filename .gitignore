@@ -240,3 +240,4 @@ AGENTS.md
 # Modelos de Machine Learning entrenados
 modelos_max/
 modelos_min/
+*.pkl
