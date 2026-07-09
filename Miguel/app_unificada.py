@@ -12,7 +12,8 @@ from datetime import date
 import time
 
 st.set_page_config(layout="wide", page_title="AEMET Unificada")
-FASTAPI_URL = "http://127.0.0.1:8000"
+# FASTAPI_URL = "http://127.0.0.1:8000"
+FASTAPI_URL = "http://18.198.208.67:8000"
 
 def realizar_peticion(metodo, url, max_reintentos=3, **kwargs):
     """Realiza peticiones HTTP a la API con sistema de reintentos."""
