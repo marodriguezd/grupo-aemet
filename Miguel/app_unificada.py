@@ -199,6 +199,13 @@ elif opcion == "Histórico":
                     df["fecha"] = pd.to_datetime(df["fecha"])
                     fig = px.line(df, x="fecha", y=["tmax", "tmed", "tmin"], title="Evolución de Temperaturas", markers=True)
                     st.plotly_chart(fig, use_container_width=True)
+                    
+                    fig_hist = px.histogram(df, x=["tmax", "tmed", "tmin"], barmode="overlay", title="Distribución de Temperaturas")
+                    st.plotly_chart(fig_hist, use_container_width=True)
+                    
+                    fig_box = px.box(df, y=["tmax", "tmed", "tmin"], title="Dispersión de Temperaturas")
+                    st.plotly_chart(fig_box, use_container_width=True)
+                    
                     st.dataframe(df, use_container_width=True)
                 else:
                     st.warning("No se encontraron datos para esas fechas.")
