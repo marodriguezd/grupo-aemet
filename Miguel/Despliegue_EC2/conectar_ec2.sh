@@ -6,7 +6,7 @@ echo "    Conexión Fácil al EC2 - AWS"
 echo "========================================"
 
 # Ruta a la clave que hemos encontrado en la carpeta de Tamara
-CLAVE_PEM="../Tamara/datos_climaticos.pem"
+CLAVE_PEM="../../Tamara/datos_climaticos.pem"
 
 # 1. SSH exige que los archivos .pem tengan permisos muy restrictivos
 echo "[1] Ajustando permisos de la clave .pem (chmod 400)..."
