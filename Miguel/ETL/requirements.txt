@@ -1,5 +1,0 @@
-pandas
-numpy
-psycopg[binary]
-xgboost
-scikit-learn
