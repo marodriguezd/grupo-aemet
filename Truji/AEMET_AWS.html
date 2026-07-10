@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual AEMET - AWS S3 - Truji</title>
+    <!-- Google Fonts for premium typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PrismJS Theme for beautiful Python/SQL syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    
+    <style>
+        :root {
+            --primary: #0f172a;
+            --primary-light: #1e293b;
+            --secondary: #0ea5e9;
+            --secondary-hover: #38bdf8;
+            --accent: #f59e0b;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-dark: #0f172a;
+            --text-muted: #475569;
+            --border: #e2e8f0;
+            --code-bg: #1e1e24;
+            --code-text: #f8f8f2;
+            --badge-bg: #e0f2fe;
+            --badge-text: #0369a1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-dark);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Navigation */
+        aside {
+            width: 320px;
+            background-color: var(--primary);
+            color: white;
+            padding: 30px 20px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+        }
+
+        aside .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 35px;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 20px;
+        }
+
+        aside .brand i {
+            color: var(--secondary);
+            font-size: 1.6rem;
+        }
+
+        aside nav ul {
+            list-style: none;
+        }
+
+        aside nav li {
+            margin-bottom: 6px;
+        }
+
+        aside nav a {
+            color: #94a3b8;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.92rem;
+            transition: all 0.2s ease;
+        }
+
+        aside nav a:hover, aside nav a.active {
+            color: white;
+            background-color: var(--primary-light);
+        }
+
+        aside nav a.active {
+            border-left: 4px solid var(--secondary);
+            background-color: rgba(14, 165, 233, 0.1);
+        }
+
+        aside nav a i {
+            width: 18px;
+            font-size: 1.05rem;
+            text-align: center;
+            color: var(--secondary);
+        }
+
+        /* Main Content */
+        main {
+            margin-left: 320px;
+            flex: 1;
+            padding: 40px 60px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 16px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(14,165,233,0.15) 0%, rgba(14,165,233,0) 70%);
+            border-radius: 50%;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        header h1 span {
+            color: var(--secondary);
+        }
+
+        header p {
+            color: #cbd5e1;
+            font-size: 1.1rem;
+            max-width: 900px;
+        }
+
+        /* Sections and Cards */
+        section {
+            background-color: var(--bg-card);
+            padding: 40px;
+            border-radius: 16px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+            border: 1px solid var(--border);
+            scroll-margin-top: 20px;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+        }
+
+        h2 i {
+            color: var(--secondary);
+        }
+
+        h3 {
+            color: var(--primary-light);
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 30px 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        p {
+            margin-bottom: 20px;
+            color: #334155;
+            font-size: 1.05rem;
+        }
+
+        /* Custom lists */
+        ol, ul {
+            padding-left: 20px;
+            margin-bottom: 25px;
+        }
+
+        li {
+            margin-bottom: 12px;
+            font-size: 1.05rem;
+            color: #334155;
+        }
+
+        li strong {
+            color: var(--primary);
+        }
+
+        /* Code Block Styling overrides for PrismJS */
+        code {
+            font-family: 'JetBrains Mono', Courier, monospace;
+            background-color: #f1f5f9;
+            padding: 3px 6px;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            color: #0284c7;
+            font-weight: 500;
+        }
+
+        .code-container {
+            position: relative;
+            margin: 25px 0;
+        }
+
+        .code-container .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 100;
+            background-color: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #e2e8f0;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .code-container .copy-btn:hover {
+            background-color: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+
+        pre {
+            margin: 0 !important;
+            border-radius: 12px !important;
+            border-left: 4px solid var(--secondary) !important;
+            background-color: #1e1e24 !important;
+            padding: 24px !important;
+            overflow-x: auto;
+        }
+
+        pre code {
+            background-color: transparent !important;
+            padding: 0 !important;
+            font-size: 0.92rem !important;
+            line-height: 1.55 !important;
+            font-family: 'JetBrains Mono', Courier, monospace !important;
+            white-space: pre;
+        }
+        
+        .badge {
+            display: inline-block;
+            background-color: var(--badge-bg);
+            color: var(--badge-text);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+        .premium-header {
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            color: white;
+            padding: 20px 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            border-left: 5px solid var(--accent);
+        }
+        .premium-header h2 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: var(--accent);
+            border-bottom: none;
+            padding-bottom: 0;
+            font-size: 1.6rem;
+        }
+        .premium-header p {
+            margin-bottom: 0;
+            font-size: 1.1rem;
+            opacity: 0.95;
+            color: #f1f5f9;
+        }
+        .premium-header code {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <aside>
+        <div class="brand">
+            <i class="fa-brands fa-aws"></i>
+            <span>AEMET AWS</span>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#objetivos" class="active"><i class="fa-solid fa-star"></i> <span>Objetivos de este Notebook</span></a></li>
+                <li><a href="#paso-1-crear-la-estructura-desde-python-boto3"><i class="fa-solid fa-bucket"></i> <span>Paso 1: Crear la estructura desde Python (Boto3)</span></a></li>
+                <li><a href="#paso-2-carga-inicial-de-archivos-json"><i class="fa-solid fa-sitemap"></i> <span>Paso 2: Carga Inicial de Archivos JSON</span></a></li>
+                <li><a href="#paso-3-configurar-el-disparador-event-notification"><i class="fa-solid fa-upload"></i> <span>Paso 3: Configurar el Disparador (Event Notification)</span></a></li>
+                <li><a href="#paso-4-subida-hist-rica-de-archivos-json"><i class="fa-solid fa-satellite-dish"></i> <span>Paso 4: Carga Histórica Masiva a AWS RDS y S3</span></a></li>
+            </ul>
+        </nav>
+    </aside>
+    <main>
+        <header>
+            <h1><i class="fa-brands fa-aws"></i> <span>Proyecto AEMET</span> - AWS S3</h1>
+            <p>Resumen exhaustivo de Creación de Bucket, Conexión Boto3, y Subida de Archivos JSON</p>
+        </header>
+        <section id="objetivos">
+            <span class="badge">Sección 1</span>
+            <div class="premium-header">
+                <h2><i class="fa-solid fa-star"></i> Objetivos de este Notebook</h2>
+                <p>Este notebook explica paso a paso el proceso de creación de un bucket en Amazon S3 y la carga automatizada de archivos de datos climatológicos desde el entorno local utilizando la librería <code>boto3</code>.</p>
+            </div>
+            <ol>
+                <li><strong>Conexión a AWS:</strong> Inicializar una sesión y un cliente S3 utilizando las credenciales de AWS.</li>
+                <li><strong>Creación del Bucket:</strong> Crear un bucket en la región especificada para almacenar los datos del proyecto.</li>
+                <li><strong>Diseño de Arquitectura:</strong> Establecer una estructura de carpetas virtuales (prefijos) para separar datos de entrada y procesados.</li>
+                <li><strong>Carga Automatizada:</strong> Subir lotes de archivos JSON históricos al bucket de forma programática.</li>
+            </ol>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">#================================================================================#
+#               CONEXIÓN A AWS S3 Y SESIÓN                                       # 
+#================================================================================#
+import boto3
+from botocore import client
+
+# Carga las credenciales directamente desde ~/.aws/credentials o variables de entorno
+session = boto3.Session()
+
+# Si usamos el cliente de s3, es como si usamos el comando `aws s3`
+s3: client.BaseClient = session.client('s3')
+bucket_name = 'dai07rt-proyecto-aemet-2026'</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">type(s3)</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">#================================================================================#
+#               CREACIÓN DE BUCKET EN S3                                         # 
+#================================================================================#
+# Crear un bucket (el nombre debe ser globalmente único)
+bucket_name: str = 'dai07rt-proyecto-aemet-2026'
+
+s3.create_bucket(Bucket = bucket_name,
+                 CreateBucketConfiguration = {'LocationConstraint' : session.region_name})</code></pre>
+</div>
+            <h3><i class="fa-solid fa-layer-group"></i> Arquitectura del Bucket S3</h3>
+            <p>Para lograr esta arquitectura de forma limpia y profesional, utilizaremos una estructura de prefijos (carpetas virtuales) dentro del bucket.</p>
+            <p>Es <strong>muy importante</strong> separar la entrada de la salida para evitar bucles infinitos (recursividad): si tu función Lambda lee de una carpeta y escribe el resultado en la misma carpeta, la Lambda se disparará a sí misma sin parar.</p>
+            <h4>📁 Estructura de Carpetas a diseñar:</h4>
+            <p>Dentro del bucket <code>dai07rt-proyecto-aemet-2026</code> crearemos:</p>
+            <ul>
+                <li><strong><code>entradas/</code></strong> ➡️ Aquí se subirán los archivos JSON en bruto. Solo a esta carpeta le asociaremos el evento.</li>
+                <li><strong><code>procesados/</code></strong> ➡️ Aquí se moverán o guardarán los archivos una vez limpios (o puedes subirlos directamente a tu Base de Datos RDS y no guardarlos en S3, según requiera tu proyecto).</li>
+            </ul>
+        </section>
+        <section id="paso-1-crear-la-estructura-desde-python-boto3">
+            <span class="badge">Sección 3</span>
+            <div class="premium-header">
+                <h2><i class="fa-solid fa-bucket"></i> Paso 1: Crear la estructura desde Python (Boto3)</h2>
+                <p>Ejecuta este código para inicializar las carpetas en tu bucket S3. (Opcional, AWS crea las carpetas virtuales automáticamente al subir archivos a un prefijo que no existe, pero se pueden pre-crear como objetos vacíos).</p>
+            </div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">import boto3
+s3 = boto3.client('s3')
+#bucket_name = 'dai07rt-proyecto-aemet-2026'
+# 1. Crear carpeta para los JSON entrantes
+#s3.put_object(Bucket=bucket_name, Key='entradas/json_limpio/')
+# 2. Crear carpeta para los datos ya tratados/limpios
+# s3.put_object(Bucket=bucket_name, Key='procesados/json/')
+# print("¡Estructura de carpetas creada con éxito!")</code></pre>
+</div>
+        </section>
+        <section id="paso-2-carga-inicial-de-archivos-json">
+            <span class="badge">Sección 4</span>
+            <div class="premium-header">
+                <h2><i class="fa-solid fa-sitemap"></i> Paso 2: Carga Inicial de Archivos JSON</h2>
+                <p>Subida inicial de archivos de prueba a la carpeta de entradas del bucket.</p>
+            </div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python"># # Subimos fichero
+# for i in range(10):
+#     s3.upload_file(Filename = "archivo_demo.txt", Bucket = bucket_name, Key = f"archivo_demo_{i}.txt")</code></pre>
+</div>
+        </section>
+        <section id="paso-3-configurar-el-disparador-event-notification">
+            <span class="badge">Sección 5</span>
+            <div class="premium-header">
+                <h2><i class="fa-solid fa-upload"></i> Paso 3: Configurar el Disparador (Event Notification)</h2>
+                <p>Para que el evento solo se active cuando llega un JSON a la carpeta <code>entradas/</code>, debes configurar los filtros <strong>Prefix</strong> (Prefijo) y <strong>Suffix</strong> (Sufijo) al asociar el trigger a tu Lambda.</p>
+            </div>
+            <h3>⚙️ Opción A: Desde la consola web de AWS (Recomendada)</h3>
+            <ol>
+                <li>Entra a tu función Lambda en la consola de AWS.</li>
+                <li>Pulsa en <strong>Add Trigger</strong> (Añadir disparador) y selecciona <strong>S3</strong>.</li>
+                <li>Selecciona tu bucket: <code>dai07rt-proyecto-aemet-2026</code>.</li>
+                <li>En <em>Event types</em>, selecciona <strong>All object create events</strong> (o <code>PUT</code>).</li>
+            </ol>
+            <p>⚠️ <strong>Clave del filtro:</strong></p>
+            <ul>
+                <li><strong>Prefix:</strong> Escribe <code>entradas/</code></li>
+                <li><strong>Suffix:</strong> Escribe <code>.json</code></li>
+            </ul>
+            <p>5. Pulsa en <strong>Add</strong>.</p>
+            <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid #0284c7; margin-top: 15px;">
+                <em>A partir de este momento, si subes un archivo a <code>procesados/</code> o a la raíz del bucket, la Lambda no se ejecutará. Solo reaccionará cuando subas un archivo terminado en <code>.json</code> dentro de <code>entradas/</code>.</em>
+            </div></p>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python"># Listar objetos del bucket
+
+response: dict = s3.list_objects_v2(Bucket = bucket_name)
+
+response["Contents"]</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python"># prueba de subida JSON al bucket
+fichero_subida = 'C:/curso_hack_boss/Proyecto_final_AEMET/POC_Truji/sheets/json/climaticos_2016.json'
+s3.upload_file(Filename = fichero_subida, Bucket = bucket_name, Key='entradas/json')</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">import botocore
+
+fichero_subida = 'C:/curso_hack_boss/Proyecto_final_AEMET/POC_Truji/sheets/json/climaticos_2018.json'
+bucket_name = 'dai07rt-proyecto-aemet-2026'
+s3_path_entrada: str = 'entradas/json/'
+try:
+    print("Iniciando subida...")
+    s3.upload_file(
+        Filename = fichero_subida, 
+        Bucket = bucket_name, 
+        Key = f"{s3_path_entrada}prueba_2018.json"
+    )
+    print("¡Subida completada con éxito!")
+except botocore.exceptions.ClientError as e:
+    print(f"Error de cliente de AWS (permisos, bucket inexistente, etc): {e}")
+except FileNotFoundError:
+    print(f"Error: No se encontró el archivo local en la ruta: {fichero_subida}")
+except Exception as e:
+    print(f"Ocurrió un error inesperado: {e}")
+</code></pre>
+</div>
+        </section>
+        <section id="paso-4-subida-hist-rica-de-archivos-json">
+            <span class="badge">Sección 6</span>
+            <div class="premium-header">
+                <h2><i class="fa-solid fa-satellite-dish"></i> Paso 4: Carga Histórica Masiva a AWS RDS y S3</h2>
+                <p>Descarga iterativa de datos anuales en formato JSON desde Python. Los registros históricos se insertan directamente en la base de datos <strong>AWS RDS</strong>, almacenando simultáneamente una copia de seguridad en el bucket S3 (<code>entradas/json_procesados/</code>).</p>
+            </div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">#================================================================================#
+#               CONEXIÓN A AWS S3 Y SESIÓN                                       # 
+#================================================================================#
+import boto3
+import botocore
+from botocore import client
+
+# Carga las credenciales directamente desde ~/.aws/credentials o variables de entorno
+session = boto3.Session()
+
+# Si usamos el cliente de s3, es como si usamos el comando `aws s3`
+s3: client.BaseClient = session.client('s3')
+
+#
+bucket_name = 'dai07rt-proyecto-aemet-2026'
+s3_path_entrada: str = 'entradas/json_procesados/'
+
+for año in range (2026,2015,-1):
+
+    fichero_subida = (f"C:/curso_hack_boss/Proyecto_final_AEMET/POC_Truji/salidas/json/carga_climaticos_{año}.json")
+    print (f"origen fichero a subir [{fichero_subida}] ")
+    Key_subida = f"{s3_path_entrada}carga_climaticos_{año}.json"
+    print (f"destino fichero a subir [{Key_subida}]")
+    try:
+        print("Iniciando subida...")
+        s3.upload_file(
+            Filename = fichero_subida, 
+            Bucket = bucket_name, 
+            Key = Key_subida
+        )
+        print("¡Subida completada con éxito!")
+    except botocore.exceptions.ClientError as e:
+        print(f"Error de cliente de AWS (permisos, bucket inexistente, etc): {e}")
+    except FileNotFoundError:
+        print(f"Error: No se encontró el archivo local en la ruta: {Key_subida}")
+    except Exception as e:
+        print(f"Ocurrió un error inesperado: {e}")</code></pre>
+</div>
+            <div style="background-color: var(--card-bg); padding: 25px; border-radius: 12px; border-left: 6px solid var(--secondary); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 30px; margin-bottom: 25px;">
+                <h3 style="margin-top: 0; color: var(--primary); font-size: 1.4rem; border-bottom: none; padding-bottom: 0;">
+                    <i class="fa-solid fa-plug" style="color: var(--secondary);"></i> Crear conexión a la API AEMET para sacar los datos en formato JSON y subir al Bucket de S3
+                </h3>
+                <div style="display: flex; gap: 15px; align-items: center; margin-top: 15px;">
+                    <div style="background: var(--badge-bg); padding: 10px; border-radius: 50%; color: var(--badge-text);">
+                        <i class="fa-solid fa-brain fa-xl"></i>
+                    </div>
+                    <p style="margin: 0; font-size: 1.1rem; color: var(--text-muted);">
+                        Crear conexión a la API para sacar los datos en formato JSON en crudo y subir al Bucket de S3 de forma automatizada.
+                    </p>
+                </div>
+            </div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">#================================================================================#
+#               LIBRERÍAS GENERALES Y DEPENDENCIAS ADICIONALES                   # 
+#================================================================================#
+# Importamos las librerías necesarias
+import os
+import zipfile
+import sys
+import time
+import json
+import calendar
+import subprocess
+from datetime import datetime, timedelta
+from pathlib import Path
+import pandas as pd
+import numpy as np
+import requests
+from dotenv import load_dotenv
+from IPython.display import display
+import urllib.parse
+
+# Tuve que meter este parche raro de zipfile porque me daba error al cerrar archivos excel en python 3.14+
+# 'ValueError: seek of closed file'. Lo saqué de StackOverflow y le pongo un check para que no se raye si ejecuto la celda dos veces.
+if not hasattr(zipfile.ZipFile, '_patched'):
+    try:
+        _orig_zipfile_del = zipfile.ZipFile.__del__
+        def _safe_zipfile_del(self):
+            try:
+                _orig_zipfile_del(self)
+            except (ValueError, AttributeError):
+                pass
+        zipfile.ZipFile.__del__ = _safe_zipfile_del
+        zipfile.ZipFile._patched = True
+    except AttributeError:
+        pass
+
+
+# Función para comprobar e instalar automáticamente las librerías si no están instaladas
+def asegurar_libreria(nombre_paquete, nombre_import=None):
+    if nombre_import is None:
+        nombre_import = nombre_paquete
+    try:
+        __import__(nombre_import)
+    except ImportError:
+        print(f"No tienes instalado '{nombre_paquete}'. Instalando con pip...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", nombre_paquete])
+        print(f"'{nombre_paquete}' instalada correctamente.")
+
+asegurar_libreria("openpyxl")
+asegurar_libreria("matplotlib", "matplotlib.pyplot")
+asegurar_libreria("seaborn")
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set_theme(style="whitegrid")
+
+print("Librerías listas!")</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">#================================================================================#
+#               CARGA DE VARIABLES DE ENTORNO Y CREDENCIALES                     # 
+#================================================================================#
+# Buscamos el archivo .env para la API KEY de AEMET
+BASE_DIR = Path().resolve()
+env_path = BASE_DIR / '.env'
+
+print("Buscando el archivo .env en:", env_path)
+
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
+    print("El archivo .env se ha cargado.")
+else:
+    print("Ojo: No se encontró el .env en esta carpeta. Probamos con el entorno general.")
+    load_dotenv()
+
+# Sacamos la API Key
+API_KEY = os.getenv('AEMET_API_KEY')
+if not API_KEY:
+    raise RuntimeError('No se encontró AEMET_API_KEY en las variables de entorno.')
+else:
+    # Mostramos un trozo por seguridad
+    print(f"API Key encontrada: {API_KEY[:6]}...{API_KEY[-6:]}")</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">#================================================================================#
+#               CONEXIÓN API AEMET Y DESCARGA DATOS                              # 
+#================================================================================#
+# Petición para una sola estación (para pruebas)
+def obtener_valores_climaticos(fecha_ini_utc, fecha_fin_utc, idema):
+    url_base = f"https://opendata.aemet.es/opendata/api/valores/climatologicos/diarios/datos/fechaini/{fecha_ini_utc}/fechafin/{fecha_fin_utc}/estacion/{idema}"
+    
+    try:
+        response = requests.get(url_base, headers=headers, timeout=30)
+        if response.status_code == 200:
+            meta_datos = response.json()
+            if meta_datos.get('estado') == 200:
+                url_final = meta_datos.get('datos')
+                datos_response = requests.get(url_final, timeout=30)
+                if datos_response.status_code == 200:
+                    return datos_response.json()
+                else:
+                    print("Error descargando los datos climatológicos:", datos_response.status_code)
+            else:
+                return None
+        else:
+            print("Error de red:", response.status_code)
+    except Exception as e:
+        print("Excepción al consultar clima:", e)
+    return None
+
+
+# Petición para todas las estaciones con reintentos y esperas (backoff) si falla la API
+def obtener_valores_climaticos_todas(fecha_ini_utc, fecha_fin_utc, max_retries=15, base_delay=5.0):
+    url_base = f"https://opendata.aemet.es/opendata/api/valores/climatologicos/diarios/datos/fechaini/{fecha_ini_utc}/fechafin/{fecha_fin_utc}/todasestaciones"
+    delay = base_delay
+    for intento in range(max_retries):
+        try:
+            response = requests.get(url_base, headers=headers, timeout=30)
+            
+            # Si no tenemos permiso o no existe el endpoint, paramos
+            if response.status_code in [401, 403, 404]:
+                print(f"Error grave {response.status_code}, no se puede reintentar.")
+                return None
+                
+            if response.status_code == 200:
+                meta_datos = response.json()
+                estado = meta_datos.get('estado')
+                
+                if estado == 200:
+                    url_final = meta_datos.get('datos')
+                    datos_response = requests.get(url_final, timeout=30)
+                    if datos_response.status_code == 200:
+                        return datos_response.json()
+                    elif datos_response.status_code in [401, 403, 404]:
+                        print(f"Error grave en datos {datos_response.status_code}, no reintentamos.")
+                        return None
+                    else:
+                        print(f"Intento {intento+1} fallido al descargar datos: {datos_response.status_code}")
+                elif estado in [401, 403, 404]:
+                    print(f"Error API: Estado {estado}: {meta_datos.get('descripcion')}. No se reintentará.")
+                    return None
+                elif estado == 429:
+                    print(f"Intento {intento+1}: La API dice Estado 429 (Límite superado).")
+                else:
+                    print(f"Intento {intento+1}: API devolvió Estado {estado}: {meta_datos.get('descripcion')}")
+            elif response.status_code == 429:
+                print(f"Intento {intento+1}: HTTP 429 (Muchas peticiones).")
+            else:
+                print(f"Intento {intento+1}: Código de red {response.status_code}")
+                
+        except Exception as e:
+            print(f"Intento {intento+1}: Error de red/conexión: {e}")
+            
+        if intento &lt; max_retries - 1:
+            print(f"Esperando {delay} segundos antes de reintentar...")
+            time.sleep(delay)
+            delay *= 2.0
+            
+    print(f"No se pudo descargar el bloque tras {max_retries} intentos.")
+    return None
+
+# Hacemos una prueba con Palma de Mallorca (B228)
+idema_prueba = "B228"
+ini_prueba = "2026-05-01T00:00:00UTC"
+fin_prueba = "2026-05-15T00:00:00UTC"
+
+print("Probando descarga para Palma de Mallorca...")
+climaticos_prueba = obtener_valores_climaticos(ini_prueba, fin_prueba, idema_prueba)
+
+if climaticos_prueba:
+    print(f"¡Funciona! Hemos descargado {len(climaticos_prueba)} filas diarias.")
+    print("Ejemplo del primer registro en crudo:")
+    print(json.dumps(climaticos_prueba[0], indent=2, ensure_ascii=False))
+else:
+    print("No se han recibido datos. Revisa fechas y tu API Key.")</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">#================================================================================#
+#               SUBIDA MASIVA (ITERATIVA) AL BUCKET S3                           # 
+#================================================================================#
+# Ajustamos las fechas para la descarga histórica (10 años en bloques)
+fecha_fin_global = datetime(2026, 6, 27)
+DIAS_A_CONSULTAR = 3650  # 10 años
+
+#DIAS_A_CONSULTAR = 1000  #prueba de carga
+fecha_inicio_global = fecha_fin_global - timedelta(days=DIAS_A_CONSULTAR - 1)
+
+# Carpetas de salida 
+OUTPUT_JSON_DIR = BASE_DIR / 'salidas' / 'json'
+OUTPUT_JSON_DIR.mkdir(parents=True, exist_ok=True)
+
+# Calculo de año incio y fin
+año_inicio = fecha_inicio_global.year
+año_fin = fecha_fin_global.year
+
+print (f"años calculados [{año_inicio}][{año_fin}]")
+
+# Buzon entrada el Bucket
+s3_path_entrada: str = 'entradas/json/'
+
+print(f"Empezando la descarga masiva por años desde {año_inicio} hasta {año_fin}...")
+
+for año in range(año_fin, año_inicio - 1, -1):
+    print("\n-----------------------------------------")
+    print(f"Procesando el año: {año}")
+    print("-----------------------------------------")
+    
+    # calculo para cambio de año
+    ini_año = max(datetime(año, 1, 1), fecha_inicio_global)
+    fin_año = min(datetime(año, 12, 31), fecha_fin_global)
+    
+    df_año = pd.DataFrame()
+    fecha_actual = fin_año
+    
+    # Descargamos en bloques de 15 días
+    lote_size = 15  
+    dias_año_procesados = 0
+    total_dias_año = (fin_año - ini_año).days + 1
+    
+    print(f"Fechas para {año}: de {ini_año.strftime('%Y-%m-%d')} a {fin_año.strftime('%Y-%m-%d')} ({total_dias_año} días)")
+    
+    while dias_año_procesados &lt; total_dias_año:
+        dias_restantes = total_dias_año - dias_año_procesados
+        dias_lote = min(lote_size, dias_restantes)
+        
+        fecha_ini_lote = fecha_actual - timedelta(days=dias_lote - 1)
+        
+        fecha_ini_str = fecha_ini_lote.strftime("%Y-%m-%dT00:00:00UTC")
+        fecha_fin_str = fecha_actual.strftime("%Y-%m-%dT23:59:59UTC")
+        
+        print(f"Descargando bloque: {fecha_ini_str} a {fecha_fin_str}...")
+        
+        # Esperamos 2 segundos entre descargas para no pasarnos del límite de la API
+        print("Pausa de 2 segundos...")
+        time.sleep(2.0)
+        
+        datos_json = obtener_valores_climaticos_todas(fecha_ini_str, fecha_fin_str)
+        
+        # Convertir directamente a DataFrame
+        df_lote = pd.DataFrame(datos_json)
+
+        if datos_json:
+            # df_lote = limpiar_y_cargar_datos_fechas_todas_estaciones(datos_json)
+            df_año = pd.concat([df_año, df_lote], ignore_index=True)
+            print(f"Ok, bloque descargado. Registros nuevos: {len(df_lote)}")
+        else:
+            print(f"Error en bloque de {fecha_ini_str} a {fecha_fin_str}")
+            
+        dias_año_procesados += dias_lote
+        fecha_actual = fecha_ini_lote - timedelta(days=1)
+        
+    # Guardamos el año completo y limpiamos memoria RAM
+    if not df_año.empty:
+        # Ordenar por fecha cronológica más antigua a más reciente
+        if 'fecha' in df_año.columns:
+            df_año = df_año.sort_values(by='fecha', ascending=True)
+            
+       
+        # lo convertimos a json en formato de registros
+        json_data = df_año.to_json(orient='records', force_ascii=False)
+    
+        # lo formateamos para que sea legible por humanos (comentar estas dos lineas si prefieres ahorrar espacio)
+        json_data = json.dumps(json.loads(json_data), indent=4, ensure_ascii=False)
+
+        # guardamos cada año en un archivo independiente
+        json_path = OUTPUT_JSON_DIR / f"carga_climaticos_{año}.json"
+        print (json_path)
+    
+        with open(f"{json_path}", "w", encoding="utf-8") as file:
+             file.write(json_data)     
+
+        # Forzamos la limpieza de RAM
+        del df_año
+        gc.collect()
+
+    ### Subida del JSON sucio a Bucket S3
+
+        try:
+            print("Iniciando subida...")
+            s3.upload_file(
+                Filename = json_path, 
+                Bucket = bucket_name, 
+                Key = f"{s3_path_entrada}carga_climaticos_{año}.json"
+            )
+            print(f"¡Subida completada con éxito! {s3_path_entrada}carga_climaticos_{año}.json")
+        except botocore.exceptions.ClientError as e:
+            print(f"Error de cliente de AWS (permisos, bucket inexistente, etc): {e}")
+        except FileNotFoundError:
+            print(f"Error: No se encontró el archivo local en la ruta: {fichero_subida}")
+        except Exception as e:
+            print(f"Ocurrió un error inesperado: {e}")      
+
+
+    else:
+        print(f"No hay datos para el año {año}, no guardamos nada.")
+
+print("\n¡Descarga y exportación completadas!")</code></pre>
+</div>
+            <div style="background-color: var(--badge-bg); padding: 25px; border-radius: 12px; border: 2px dashed var(--badge-text); margin-top: 30px; margin-bottom: 25px;">
+                <h3 style="margin-top: 0; color: var(--badge-text); font-size: 1.4rem; border-bottom: none; padding-bottom: 0;">
+                    <i class="fa-solid fa-database"></i> Conexión a Base de Datos (AWS RDS) desde Python
+                </h3>
+                <div style="display: flex; gap: 15px; align-items: center; margin-top: 15px;">
+                    <div style="background: white; padding: 10px; border-radius: 50%; color: var(--badge-text); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <i class="fa-solid fa-link fa-xl"></i>
+                    </div>
+                    <p style="margin: 0; font-size: 1.1rem; color: var(--text-dark);">
+                        En esta sección establecemos conexión con la base de datos PostgreSQL alojada en AWS RDS para validar que todo funciona antes de cargar el inventario.
+                    </p>
+                </div>
+            </div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">#================================================================================#
+#               LIBRERÍAS DE CONEXIÓN A BASE DE DATOS                            # 
+#================================================================================#
+from typing import Final
+import psycopg</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">#================================================================================#
+#               CREDENCIALES Y TEST DE CONEXIÓN A AWS RDS                        # 
+#================================================================================#
+HOST: Final[str] = "database-dai07rt-proyecto-aemet-2026.cr828ecqk1a6.eu-central-1.rds.amazonaws.com"
+PORT: Final[str] = "5432"
+DBNAME: Final[str] = "postgres"
+USER: Final[str] = "aemet2026"
+PASSWORD: Final[str] = "mondongo-dai07rt-aemet-2026"
+
+dsn: str = f"postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}"
+
+with psycopg.connect(dsn) as conn:
+     with conn.cursor() as cur:
+          cur.execute("SELECT * from estaciones;")
+          record: tuple = cur.fetchone()
+     print(f"conectado AWS: {record}")
+
+dsn</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">#================================================================================#
+#               LIBRERÍAS GENERALES Y DEPENDENCIAS ADICIONALES                   # 
+#================================================================================#
+# Importamos las librerías necesarias
+import os
+import zipfile
+import sys
+import time
+import json
+import calendar
+import subprocess
+from datetime import datetime, timedelta
+from pathlib import Path
+import pandas as pd
+import numpy as np
+import requests
+from dotenv import load_dotenv
+from IPython.display import display
+import urllib.parse
+
+# Tuve que meter este parche raro de zipfile porque me daba error al cerrar archivos excel en python 3.14+
+# 'ValueError: seek of closed file'. Lo saqué de StackOverflow y le pongo un check para que no se raye si ejecuto la celda dos veces.
+if not hasattr(zipfile.ZipFile, '_patched'):
+    try:
+        _orig_zipfile_del = zipfile.ZipFile.__del__
+        def _safe_zipfile_del(self):
+            try:
+                _orig_zipfile_del(self)
+            except (ValueError, AttributeError):
+                pass
+        zipfile.ZipFile.__del__ = _safe_zipfile_del
+        zipfile.ZipFile._patched = True
+    except AttributeError:
+        pass
+
+
+# Función para comprobar e instalar automáticamente las librerías si no están instaladas
+def asegurar_libreria(nombre_paquete, nombre_import=None):
+    if nombre_import is None:
+        nombre_import = nombre_paquete
+    try:
+        __import__(nombre_import)
+    except ImportError:
+        print(f"No tienes instalado '{nombre_paquete}'. Instalando con pip...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", nombre_paquete])
+        print(f"'{nombre_paquete}' instalada correctamente.")
+
+asegurar_libreria("openpyxl")
+asegurar_libreria("matplotlib", "matplotlib.pyplot")
+asegurar_libreria("seaborn")
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set_theme(style="whitegrid")
+
+print("Librerías listas!")</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">#================================================================================#
+#               CARGA DE VARIABLES DE ENTORNO Y CREDENCIALES                     # 
+#================================================================================#
+# Buscamos el archivo .env para la API KEY de AEMET
+BASE_DIR = Path().resolve()
+env_path = BASE_DIR / '.env'
+
+print("Buscando el archivo .env en:", env_path)
+
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
+    print("El archivo .env se ha cargado.")
+else:
+    print("Ojo: No se encontró el .env en esta carpeta. Probamos con el entorno general.")
+    load_dotenv()
+
+# Sacamos la API Key
+API_KEY = os.getenv('AEMET_API_KEY')
+if not API_KEY:
+    raise RuntimeError('No se encontró AEMET_API_KEY en las variables de entorno.')
+else:
+    # Mostramos un trozo por seguridad
+    print(f"API Key encontrada: {API_KEY[:6]}...{API_KEY[-6:]}")</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">#================================================================================#
+#               PREPARACIÓN DE CABECERAS (HEADERS) PARA LA API                   # 
+#================================================================================#
+# Preparamos las cabeceras para la petición
+headers = {
+           'cache-control': "no-cache",
+           'api_key': API_KEY,
+           'accept': "application/json"      
+}
+
+print("Cabeceras listas para usar.")</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">#==================================================================================#
+#  =&gt; Función para traer el listado de todas las estacionesde API AEMET OpenDAta   # 
+#==================================================================================#
+#    Por defecto max_retries = 10 y base_delay = 5.0 para intentos de conexion     #
+#==================================================================================#
+
+def obtener_inventario_estaciones( max_retries = 10, base_delay = 5.0):
+    url_base = "https://opendata.aemet.es/opendata/api/valores/climatologicos/inventarioestaciones/todasestaciones"
+    delay = base_delay
+    print("Pidiendo el inventario a la API:", url_base)
+    
+    # Bucle de conexiones por si hay algun problema intenta 
+    for intento in range(max_retries):
+        
+        try:
+
+            response = requests.get(url_base, headers=headers, timeout=30)
+            
+            # Si no tenemos permiso o no existe el endpoint, paramos
+            # Codigos de error : 401 Unauthorized (No autorizado), 403 Forbidden (Prohibido), 404 Not Found (No encontrado)
+            if response.status_code in [401, 403, 404]:
+                print(f"Error grave {response.status_code}, no se puede reintentar.")
+                return None
+
+            # Como ha dado 200 es ok la conexion
+            if response.status_code == 200:
+                meta_datos = response.json()
+                estado = meta_datos.get('estado')
+                print(f"Respuesta API: {meta_datos.get('descripcion')} (Estado: {meta_datos.get('estado')})")
+                
+                if meta_datos.get('estado') == 200:
+                    url_datos = meta_datos.get('datos')
+                    print("Tenemos enlace temporal, descargando los datos reales...")
+
+                if estado == 200:
+                    # Con la URL url_final de datos nos conectamos otra vez para que nos de los datos 
+                    url_final = meta_datos.get('datos')
+                    datos_response = requests.get(url_final, timeout=30)
+                    # Si conexion OK nos da el JSON con los datos con un timeout 30 segundos por sino responde     
+                    if datos_response.status_code == 200:
+                        return datos_response.json()
+                    # Codigos de error : 401 Unauthorized (No autorizado), 403 Forbidden (Prohibido), 404 Not Found (No encontrado)
+                    elif datos_response.status_code in [401, 403, 404]:
+                        print(f"Error grave en datos {datos_response.status_code}, no reintentamos.")
+                        return None
+                    else:
+                        print(f"Intento {intento+1} fallido al descargar datos: {datos_response.status_code}")
+                # Codigos de error : 401 Unauthorized (No autorizado), 403 Forbidden (Prohibido), 404 Not Found (No encontrado)        
+                elif estado in [401, 403, 404]:
+                    print(f"Error API: Estado {estado}: {meta_datos.get('descripcion')}. No se reintentará.")
+                    return None
+                # si la conexion da Codigos de error : 429 Too Many Requests (superado el limite de peticiones)    
+                elif estado == 429:
+                    print(f"Intento {intento+1}: La API dice Estado 429 (Límite superado).")
+                else:
+                    print(f"Intento {intento+1}: API devolvió Estado {estado}: {meta_datos.get('descripcion')}")
+            # si la conexion da Codigos de error : 429 Too Many Requests (superado el limite de peticiones)
+            elif response.status_code == 429:
+                print(f"Intento {intento+1}: HTTP 429 (Muchas peticiones).")
+            else:
+                print(f"Intento {intento+1}: Código de red {response.status_code}")
+
+        #salida por maximo intentos de conexion        
+        except Exception as e:
+            print(f"Intento {intento+1}: Error de red/conexión: {e}")
+
+        # sigue intentandolo hastq eue llegue al maximo intentos             
+        if intento &lt; max_retries - 1:
+            print(f"Esperando {delay} segundos antes de reintentar...")
+            time.sleep(delay)
+            delay *= 2.0
+
+    print(f"Funcion [obtener_inventario_estaciones] No se pudo descargar el bloque tras {max_retries} intentos.")        
+    return None
+
+#==================================================================================================#
+#  =&gt; Función para traer el JSON de todas las estaciones de API AEMET OpenDAta  entre dos fechas   # 
+#==================================================================================================#
+#   .-  Por defecto max_retries = 15 y base_delay = 5.0 para intentos de conexion                  #
+#   .-  fechaini = fecha_ini_utc (formato especial de la API 2026-05-01T00:00:00UTC                #
+#   .-  fechafin = fecha_ini_utc (formato especial de la API 2026-05-15T00:00:00UTC                #
+#==================================================================================================#
+
+# Petición para todas las estaciones con reintentos y esperas (backoff) si falla la API
+def obtener_valores_climaticos_todas(fecha_ini_utc, fecha_fin_utc, max_retries=15, base_delay=5.0):
+    url_base = f"https://opendata.aemet.es/opendata/api/valores/climatologicos/diarios/datos/fechaini/{fecha_ini_utc}/fechafin/{fecha_fin_utc}/todasestaciones"
+    delay = base_delay
+
+    # Bucle de conexiones por si hay algun problema intenta 
+    for intento in range(max_retries):
+
+        try:
+
+            response = requests.get(url_base, headers=headers, timeout=30)
+            
+            # Si no tenemos permiso o no existe el endpoint, paramos
+            # Codigos de error : 401 Unauthorized (No autorizado), 403 Forbidden (Prohibido), 404 Not Found (No encontrado)
+            if response.status_code in [401, 403, 404]:
+                print(f"Error grave {response.status_code}, no se puede reintentar.")
+                return None
+
+            # Como ha dado 200 es ok la conexion                
+            if response.status_code == 200:
+                meta_datos = response.json()
+                estado = meta_datos.get('estado')
+                
+                if estado == 200:
+                    # Con la URL url_final de datos nos conectamos otra vez para que nos de los datos                     
+                    url_final = meta_datos.get('datos')
+                    datos_response = requests.get(url_final, timeout=30)
+                    # Si conexion OK nos da el JSON con los datos con un timeout 30 segundos por sino responde                   
+                    if datos_response.status_code == 200:
+                        return datos_response.json()
+                    # Codigos de error : 401 Unauthorized (No autorizado), 403 Forbidden (Prohibido), 404 Not Found (No encontrado)
+                    elif datos_response.status_code in [401, 403, 404]:
+                        print(f"Error grave en datos {datos_response.status_code}, no reintentamos.")
+                        return None
+                    else:
+                        print(f"Intento {intento+1} fallido al descargar datos: {datos_response.status_code}")
+                # Codigos de error : 401 Unauthorized (No autorizado), 403 Forbidden (Prohibido), 404 Not Found (No encontrado)        
+                elif estado in [401, 403, 404]:
+                    print(f"Error API: Estado {estado}: {meta_datos.get('descripcion')}. No se reintentará.")
+                    return None
+                # si la conexion da Codigos de error : 429 Too Many Requests (superado el limite de peticiones)    
+                elif estado == 429:
+                    print(f"Intento {intento+1}: La API dice Estado 429 (Límite superado).")
+                else:
+                    print(f"Intento {intento+1}: API devolvió Estado {estado}: {meta_datos.get('descripcion')}")
+            # si la conexion da Codigos de error : 429 Too Many Requests (superado el limite de peticiones)    
+            elif response.status_code == 429:
+                print(f"Intento {intento+1}: HTTP 429 (Muchas peticiones).")
+            else:
+                print(f"Intento {intento+1}: Código de red {response.status_code}")
+        # salida por maximo intentos de conexion                 
+        except Exception as e:
+            print(f"Intento {intento+1}: Error de red/conexión: {e}")
+
+        # sigue intentandolo hastq eue llegue al maximo intentos 
+        if intento &lt; max_retries - 1:
+            print(f"Esperando {delay} segundos antes de reintentar...")
+            time.sleep(delay)
+            delay *= 2.0
+            
+    print(f"No se pudo descargar el bloque tras {max_retries} intentos.")
+    return None
+
+
+#================================================================================#
+#  =&gt; Funcion para traducir latitud/longitud ("402500N","034102W") en un Float   # 
+#================================================================================#
+def aemet_coordenada_a_float(texto_coord):
+    
+    # Si el dato viene vacio o no es texto, devolvemos NaN (not a number)
+    if pd.isna(texto_coord) or not isinstance(texto_coord, str):
+        return None
+    
+    # 1. Quitamos espacios por si acaso
+    texto_coord = texto_coord.strip()
+    
+    # 2. Separamos la letra del final (N, S, E, W) y los numeros
+    letra = texto_coord[-1].upper()   # Coge el ultimo carácter
+    numeros = texto_coord[:-1]        # Coge todo menos el ultimo carácter
+    
+    # 3. Extraemos Grados, Minutos y Segundos troceando el texto
+    # Rellenamos con ceros a la izquierda si falta algun digito (debe tener 6 digitos)
+    numeros = numeros.zfill(6) 
+    
+    # =&gt; Grados, los dos primeros digitos
+    grados = float(numeros[0:2])
+    # =&gt; Minutos, los dos del medio    
+    minutos = float(numeros[2:4]) 
+    # =&gt; Segundos,los dos ultimos  
+    segundos = float(numeros[4:6])
+    
+    # 4. Aplicamos la formula matematica
+    decimal = grados + (minutos / 60.0) + (segundos / 3600.0)
+    
+    # 5. Si es Sur o Oeste, el numero es negativo
+    if letra in ['S', 'W']:
+        decimal = -decimal
+        
+    return decimal
+
+
+#==================================================================================================#
+#  =&gt; Función para limpiar el JSON de todas las estaciones de API AEMET OpenDAta entre dos fechas  # 
+#==================================================================================================#
+#   .- Asjustamos los datos para la carga 
+#==================================================================================================#
+
+# Limpieza y preparación de los datos obtenidos
+def limpiar_y_cargar_datos_fechas_todas_estaciones(datos_json):
+    if not datos_json:
+        return pd.DataFrame()
+        
+    datos_lista = []
+    for dia in datos_json:
+        datos_lista.append({ "fecha"      : dia.get("fecha"),
+                             "indicativo" : dia.get("indicativo"),
+                             "nombre"     : dia.get("nombre"),
+                             "provincia"  : dia.get("provincia"),
+                             "altitud"    : dia.get("altitud"),
+                             "tmed"       : dia.get("tmed"),
+                             "prec"       : dia.get("prec"),
+                             "tmin"       : dia.get("tmin"),
+                             "horatmin"   : dia.get("horatmin"),
+                             "tmax"       : dia.get("tmax"),
+                             "horatmax"   : dia.get("horatmax"),
+                             "dir"        : dia.get("dir"),
+                             "velmedia"   : dia.get("velmedia"),
+                             "racha"      : dia.get("racha"),
+                             "horaracha"  : dia.get("horaracha"),
+                             "sol"        : dia.get("sol"),
+                             "presMax"    : dia.get("presMax"),
+                             "horaPresMax": dia.get("horaPresMax"),
+                             "presMin"    : dia.get("presMin"),
+                             "horaPresMin": dia.get("horaPresMin"),
+                             "hrMedia"    : dia.get("hrMedia"),
+                             "hrMax"      : dia.get("hrMax"),
+                             "horaHrMax"  : dia.get("horaHrMax"),
+                             "hrMin"      : dia.get("hrMin"),
+                             "horaHrMin"  : dia.get("horaHrMin")
+                           })
+
+    df = pd.DataFrame(datos_lista)
+
+    # 1. Ajustes basicos de tipos de datos
+    df["fecha"]      = pd.to_datetime(df["fecha"])
+    df["altitud"]    = pd.to_numeric(df["altitud"], errors="coerce")
+    df["indicativo"] = df["indicativo"].astype(str)
+    df["nombre"]     = df["nombre"].astype(str)
+    df["provincia"]  = df["provincia"].astype(str)
+    df["dir"]        = df["dir"].astype(str)
+    df["horaracha"]  = df["horaracha"].astype(str)
+
+    # Funcion para pasar numeros con coma a float con punto
+    def a_float(columna):
+        if columna is None:
+            return np.nan
+        return columna.astype(str).str.replace(",", ".").replace("", "nan").astype(np.float32)
+
+    # 2. Convertimos las columnas numericas
+    columnas_numericas = ["tmed", "tmin", "tmax", "velmedia", "racha", "sol", "presMax", "presMin", "hrMedia", "hrMax", "hrMin"]
+    for col in columnas_numericas:
+        if col in df.columns:
+            df[col] = a_float(df[col])
+
+    # 3. Arreglamos la precipitacion (la API a veces devuelve "Ip" que significa inapreciable, la ponemos en 0.0)
+    if "prec" in df.columns:
+        df["prec"] = df["prec"].astype(str).str.replace("Ip", "0.0").str.replace(",", ".").replace("", "0.0")
+        df["prec"] = pd.to_numeric(df["prec"], errors="coerce").astype(np.float32)
+
+    # 4. Limpiamos horas y las pasamos a tipo time de python
+    columnas_tiempo = ["horatmin", "horatmax", "horaHrMax", "horaHrMin"]
+    for col in columnas_tiempo:
+        if col in df.columns:
+            df[col] = df[col].astype(str).replace(["Varias", "nan", "None", ""], np.nan)
+            df[col] = pd.to_datetime(df[col], format="%H:%M", errors="coerce").dt.time
+
+    # 5. Otras horas que vienen solo con la hora
+    columnas_hora_sola = ["horaPresMax", "horaPresMin"]
+    for col in columnas_hora_sola:
+        if col in df.columns:
+            df[col] = df[col].astype(str).replace(["Varias", "nan", "None", ""], np.nan)
+            df[col] = pd.to_datetime(df[col], format="%H", errors="coerce").dt.time
+    
+    # 6. Por nueva ubicacion de la estacion 7145D a 7145X, en el maestro de estaciones, ajustamos las mediciones.
+    df["indicativo"] = df["indicativo"].replace("7145D", "7145X")
+       
+    return df
+
+#==================================================================================================#
+#  =&gt; Función para limpiar el JSON del maestro  todas las estaciones de API AEMET OpenDAta         # 
+#==================================================================================================#
+#   .- Ajustamos los datos para la carga;                                                          #
+#      . Caso especifico de limpieza es la conversion de la latitud y longitud con la funcion      #
+#        "def aemet_coordenada_a_float()"  Ejemplo de como viene el dato [394924N , 025309E]       #
+#==================================================================================================#
+
+def limpiar_y_cargar_datos_estaciones(datos_json):
+    
+     data = []
+     for estacion in estaciones:
+
+        # Mapeamos los datos de JSON para hacer un diccionario de carga
+        data.append({ 'indicativo': estacion["indicativo"],
+                      'nombre'    : estacion["nombre"],
+                      'provincia' : estacion["provincia"],
+                      'latitud'   : estacion["latitud"],
+                      'longitud'  : estacion["longitud"],
+                      'altitud'   : estacion["altitud"],
+                      'indsinop'  : estacion["indsinop"]
+                     })
+
+     df = pd.DataFrame(data)
+
+     # Aplicamos la conversión a las columnas del DataFrame para el caso de la latitud y longitud
+     df['latitud']  = df['latitud'].apply(aemet_coordenada_a_float).astype(np.float32)
+     df['longitud'] = df['longitud'].apply(aemet_coordenada_a_float).astype(np.float32)
+
+     # Aseguramos que la altitud también sea numérica (por si viene como string) si viene vacio nan , errors='coerce'
+     df['altitud'] = pd.to_numeric(df['altitud'], errors='coerce')
+    
+     return df
+</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">#================================================================================#
+#               OBTENCIÓN Y LIMPIEZA DEL MAESTRO DE ESTACIONES                   # 
+#================================================================================#
+# Probamos a traer las estaciones
+estaciones = obtener_inventario_estaciones()
+
+if estaciones:
+    print(f"Total estaciones cargadas: {len(estaciones)}")
+    df_estaciones = pd.DataFrame(estaciones)  
+else:
+    print("No se pudo obtener el inventario. Revisa la clave API.")
+
+# Aplicamos la limpieza de datos y la transformacion.(latitud y longitud)
+df_estaciones = limpiar_y_cargar_datos_estaciones(estaciones)</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">df_estaciones</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">print (f"Database_uri [{dsn }]")
+</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">
+# Conectamos a Postgree y caragamos el maestro de estaciones
+with psycopg.connect(dsn) as conn:
+     with conn.cursor() as cursor:
+        
+        # Talbla estaciones de aemet
+         data_estaciones = df_estaciones.replace({np.nan : None}).values.tolist() 
+         cursor.executemany(query = """INSERT INTO estaciones ( indicativo , nombre , provincia , latitud , longitud , altitud , indsinop )
+                                                       VALUES (%s, %s, %s, %s, %s, %s, %s)
+                                                       ON CONFLICT (indicativo) DO NOTHING;;""",
+                            params_seq =  data_estaciones)
+</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python"># Ajustamos las fechas para la descarga histórica (10 años en bloques)
+fecha_fin_global = datetime(2026, 6, 27)
+DIAS_A_CONSULTAR = 3650  # 10 años
+
+#DIAS_A_CONSULTAR = 1000  #prueba de carga
+fecha_inicio_global = fecha_fin_global - timedelta(days=DIAS_A_CONSULTAR - 1)
+
+# Carpetas de salida 
+OUTPUT_JSON_DIR = BASE_DIR / 'salidas' / 'json'
+#OUTPUT_JSON_DIR.mkdir(parents=True, exist_ok=True)
+
+# Calculo de año incio y fin
+año_inicio = fecha_inicio_global.year
+año_fin = fecha_fin_global.year</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">print (f"año_inicio [{año_inicio}]")
+print (f"año_fin [{año_fin}]")
+print (f"carpeta {OUTPUT_JSON_DIR}")
+</code></pre>
+</div>
+            <div class="code-container">
+    <button class="copy-btn" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i> Copiar</button>
+    <pre><code class="language-python">
+# Definimos la consulta INSERT mapeando  la tabla datos_climaticos
+query = """INSERT INTO datos_climaticos ( fecha , indicativo , nombre , provincia , altitud , tmed , prec , tmin , horatmin , 
+                                          tmax , horatmax , dir , velmedia , racha , horaracha , sol , presMax , horaPresMax ,
+                                          presMin , horaPresMin , hrMedia , hrMax , horaHrMax , hrMin , horaHrMin )                
+                                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            ON CONFLICT ( indicativo , fecha ) DO NOTHING;"""
+
+# Columnas en el orden exacto esperado por la consulta SQL
+columnas = [ 'fecha' , 'indicativo' , 'nombre' , 'provincia' , 'altitud' , 'tmed' , 'prec' , 'tmin' , 'horatmin' , 'tmax' , 'horatmax' ,
+             'dir', 'velmedia' , 'racha' , 'horaracha' , 'sol' , 'presMax' , 'horaPresMax' , 'presMin' , 'horaPresMin' , 'hrMedia' ,
+             'hrMax' , 'horaHrMax' , 'hrMin' , 'horaHrMin' ]
+
+
+# Conectamos a PostgreSQL
+with psycopg.connect(dsn) as conn:
+    with conn.cursor() as cursor:
+        for año in range(año_inicio, año_fin + 1):
+            json_file = OUTPUT_JSON_DIR / f"carga_climaticos_{año}.json"
+            
+            if not json_file.exists():
+                print(f"Advertencia: El archivo {json_file.name} no existe. Saltando...")
+                continue
+                
+            print(f"Leyendo y procesando {json_file}")
+            
+            # Leemos el archivo JSON
+            with open(json_file, "r", encoding="utf-8") as f:
+                datos_json = json.load(f)
+            
+            # Convertimos a DataFrame para limpiar los datos
+            df_año = limpiar_y_cargar_datos_fechas_todas_estaciones(datos_json)
+
+            df_año = df_año[columnas].replace({np.nan: None})
+
+            # Convertimos las filas a una lista de tuplas para la inserción
+            registros = list(df_año.itertuples(index=False, name=None))
+          
+            # Ejecutamos la inserción en lote (bulk insert)
+            cursor.executemany(query, registros)
+            print(f"¡Éxito! Se han procesado e insertado {len(registros)} registros para el año {año}.")
+</code></pre>
+</div>
+        </section>
+
+    </main>
+
+    <!-- PrismJS for syntax highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+
+    <script>
+        function copyCode(button) {
+            const pre = button.nextElementSibling;
+            const code = pre.querySelector('code').innerText;
+            
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fa-solid fa-check"></i> Copiado!';
+                button.style.backgroundColor = 'var(--secondary)';
+                button.style.color = 'white';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.style.backgroundColor = 'rgba(255,255,255,0.1)';
+                    button.style.color = '#e2e8f0';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+        // Scrollspy for sidebar Navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('main section');
+            const navLinks = document.querySelectorAll('aside nav a');
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '-20% 0px -75% 0px',
+                threshold: 0
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                                // Scroll sidebar smoothly if needed
+                                link.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>

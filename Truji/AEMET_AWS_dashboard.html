@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquitectura Técnica AWS - AEMET</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0B0F19;
+            --card-bg: rgba(22, 28, 45, 0.6);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary: #FF9900; /* AWS Orange */
+            --primary-glow: rgba(255, 153, 0, 0.15);
+            --secondary: #3B82F6; /* RDS Blue */
+            --secondary-glow: rgba(59, 130, 246, 0.15);
+            --accent: #10B981; /* Python Green */
+            --text-main: #F3F4F6;
+            --text-muted: #9CA3AF;
+            --code-bg: #070a13;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 10% 20%, rgba(255, 153, 0, 0.05) 0px, transparent 50%),
+                radial-gradient(at 90% 80%, rgba(59, 130, 246, 0.05) 0px, transparent 50%);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 2rem;
+        }
+
+        header {
+            max-width: 1200px;
+            margin: 0 auto 2.5rem auto;
+            text-align: center;
+        }
+
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FF9900 0%, #FFC061 50%, #3B82F6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* TABS NAVIGATION */
+        .tabs-nav {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: rgba(22, 28, 45, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-muted);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 1rem 2rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            border-color: rgba(255, 153, 0, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .tab-btn.active {
+            color: #ffffff;
+            background: linear-gradient(135deg, rgba(255, 153, 0, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(255, 153, 0, 0.2);
+        }
+
+        /* PHASE PANELS */
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transform: translateY(15px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* CARD STYLE WITH GLASSMORPHISM */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        .card-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* DIAGRAM LAYOUTS */
+        .diagram-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        /* NODES */
+        .node {
+            background: rgba(30, 41, 59, 0.75);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.25rem 1.75rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 175px;
+            flex: 1;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .node:hover {
+            transform: translateY(-6px);
+            border-color: var(--hover-color, var(--primary));
+            box-shadow: 0 8px 30px var(--glow-color, var(--primary-glow));
+        }
+
+        .node i {
+            font-size: 2.2rem;
+            color: var(--icon-color, var(--primary));
+            transition: transform 0.3s ease;
+        }
+
+        .node:hover i {
+            transform: scale(1.12);
+        }
+
+        .node-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .node-type {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ARROWS */
+        .arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            animation: pulseArrow 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseArrow {
+            0%, 100% { opacity: 0.4; transform: translateX(0); }
+            50% { opacity: 1; transform: translateX(5px); }
+        }
+
+        /* BRANCHING FOR PHASE 2 */
+        .branch-wrapper {
+            display: flex;
+            width: 100%;
+            justify-content: center;
+            gap: 4rem;
+            margin-top: 2rem;
+        }
+
+        .branch-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            background: rgba(255, 255, 255, 0.015);
+            padding: 2rem;
+            border-radius: 20px;
+            border: 1px dashed rgba(255, 255, 255, 0.05);
+            flex: 1;
+        }
+
+        .branch-header {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: -0.5rem;
+        }
+
+        /* BRANDING STYLES */
+        .node.aws-node {
+            --hover-color: #FF9900;
+            --glow-color: rgba(255, 153, 0, 0.25);
+            --icon-color: #FF9900;
+        }
+
+        .node.db-node {
+            --hover-color: #3B82F6;
+            --glow-color: rgba(59, 130, 246, 0.25);
+            --icon-color: #3B82F6;
+        }
+
+        .node.python-node {
+            --hover-color: #10B981;
+            --glow-color: rgba(16, 185, 129, 0.25);
+            --icon-color: #10B981;
+        }
+
+        /* INFO & CODE PANEL */
+        .info-panel {
+            background: rgba(15, 23, 42, 0.85);
+            border-radius: 20px;
+            padding: 2rem;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: none; /* Oculto por defecto hasta hacer clic en un nodo */
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .info-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .info-desc {
+            color: var(--text-main);
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        /* CODE FORMATTING */
+        .code-section {
+            display: none;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .code-section.active {
+            display: flex;
+        }
+
+        .code-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #A9B2C3;
+            overflow-x: auto;
+            max-height: 380px;
+            white-space: pre;
+        }
+
+        /* Syntax colors */
+        .c-comment { color: #5C6370; font-style: italic; }
+        .c-keyword { color: #C678DD; font-weight: bold; }
+        .c-string  { color: #98C379; }
+        .c-function{ color: #61AFEF; }
+        .c-number  { color: #D19A66; }
+
+        /* RESPONSIVE DESIGN */
+        @media (max-width: 1024px) {
+            .diagram-row {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+            .arrow {
+                transform: rotate(90deg);
+                margin: 0.5rem 0;
+            }
+            .branch-wrapper {
+                flex-direction: column;
+                gap: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Arquitectura AWS - Proyecto AEMET</h1>
+        <p>Modelo técnico interactivo estructurado de la solución de ingesta, procesamiento y visualización.</p>
+    </header>
+
+    <div class="container">
+        
+        <!-- TABS BAR -->
+        <div class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('fase1')">
+                <i class="fa-solid fa-gears"></i>
+                Fase 1: Ingesta y ETL
+            </button>
+            <button class="tab-btn" onclick="switchTab('fase2')">
+                <i class="fa-solid fa-chart-line"></i>
+                Fase 2: Consumo y Aplicación
+            </button>
+        </div>
+
+        <!-- FASE 1: CONTENT -->
+        <div id="fase1" class="tab-content active">
+            <div class="card">
+                <div class="card-title">
+                    <i class="fa-solid fa-gears" style="color: var(--primary);"></i>
+                    <span>Fase 1: Flujo de Ingesta, Procesamiento y Carga (ETL)</span>
+                </div>
+
+                <div class="diagram-row">
+                    <!-- AEMET API -->
+                    <div class="node" onclick="showInfo('aemet')">
+                        <i class="fa-solid fa-cloud-sun"></i>
+                        <span class="node-name">AEMET API</span>
+                        <span class="node-type">Origen Externo</span>
+                    </div>
+
+                    <div class="arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+                    <!-- Lambda 1 -->
+                    <div class="node aws-node" onclick="showInfo('lambda1')">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span class="node-name">Lambda 1</span>
+                        <span class="node-type">Extracción Diaria</span>
+                    </div>
+
+                    <div class="arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+                    <!-- Bucket 1 -->
+                    <div class="node aws-node" onclick="showInfo('bucket1')">
+                        <i class="fa-solid fa-box-archive"></i>
+                        <span class="node-name">S3 Bucket 1</span>
+                        <span class="node-type">Datos Crudos (JSON)</span>
+                    </div>
+
+                    <div class="arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+                    <!-- Lambda 2 -->
+                    <div class="node aws-node" onclick="showInfo('lambda2')">
+                        <i class="fa-solid fa-broom"></i>
+                        <span class="node-name">Lambda 2</span>
+                        <span class="node-type">Limpieza / ETL</span>
+                    </div>
+
+                    <div class="arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+                    <!-- Bucket 2 -->
+                    <div class="node aws-node" onclick="showInfo('bucket2')">
+                        <i class="fa-solid fa-box-open"></i>
+                        <span class="node-name">S3 Bucket 2</span>
+                        <span class="node-type">Datos Limpios (CSV)</span>
+                    </div>
+
+                    <div class="arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+                    <!-- RDS PostgreSQL -->
+                    <div class="node db-node" onclick="showInfo('rds')">
+                        <i class="fa-solid fa-database"></i>
+                        <span class="node-name">Amazon RDS</span>
+                        <span class="node-type">PostgreSQL</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FASE 2: CONTENT -->
+        <div id="fase2" class="tab-content">
+            <div class="card">
+                <div class="card-title">
+                    <i class="fa-solid fa-chart-line" style="color: var(--secondary);"></i>
+                    <span>Fase 2: Consumo de Datos, Servicios API e Interfaz de Usuario</span>
+                </div>
+
+                <!-- Streamlit central source -->
+                <div style="display: flex; justify-content: center; margin-bottom: 2rem;">
+                    <div class="node python-node" onclick="showInfo('streamlit')">
+                        <i class="fa-solid fa-display"></i>
+                        <span class="node-name">Streamlit App</span>
+                        <span class="node-type">Frontend / UI</span>
+                    </div>
+                </div>
+
+                <div class="branch-wrapper">
+                    <!-- RAMA NLP & SQL -->
+                    <div class="branch-column">
+                        <div class="branch-header">Rama NLP e Inteligencia Artificial</div>
+                        
+                        <div class="node python-node" onclick="showInfo('langchain')">
+                            <i class="fa-solid fa-brain"></i>
+                            <span class="node-name">LangChain</span>
+                            <span class="node-type">Orquestador IA</span>
+                        </div>
+
+                        <div class="arrow" style="transform: rotate(90deg);"><i class="fa-solid fa-arrow-right"></i></div>
+
+                        <div class="node aws-node" onclick="showInfo('fastapi1')">
+                            <i class="fa-solid fa-server"></i>
+                            <span class="node-name">FastAPI (EC2)</span>
+                            <span class="node-type">API Service A</span>
+                        </div>
+
+                        <div class="arrow" style="transform: rotate(90deg);"><i class="fa-solid fa-arrow-right"></i></div>
+
+                        <div class="node db-node" onclick="showInfo('rds_query')">
+                            <i class="fa-solid fa-database"></i>
+                            <span class="node-name">RDS (PostgreSQL)</span>
+                            <span class="node-type">Consultas de Datos</span>
+                        </div>
+
+                        <div class="arrow" style="transform: rotate(90deg);"><i class="fa-solid fa-arrow-right"></i></div>
+
+                        <div class="node python-node" onclick="showInfo('eda1')">
+                            <i class="fa-solid fa-chart-pie"></i>
+                            <span class="node-name">EDA (Gráficas)</span>
+                            <span class="node-type">Visualización NLP</span>
+                        </div>
+                    </div>
+
+                    <!-- RAMA ML PREDICCIONES -->
+                    <div class="branch-column">
+                        <div class="branch-header">Rama Inferencia y Modelos ML</div>
+
+                        <div class="node aws-node" onclick="showInfo('fastapi2')">
+                            <i class="fa-solid fa-server"></i>
+                            <span class="node-name">FastAPI (EC2)</span>
+                            <span class="node-type">API Service B</span>
+                        </div>
+
+                        <div class="arrow" style="transform: rotate(90deg);"><i class="fa-solid fa-arrow-right"></i></div>
+
+                        <div class="node python-node" onclick="showInfo('modelos')">
+                            <i class="fa-solid fa-network-wired"></i>
+                            <span class="node-name">Modelos ML</span>
+                            <span class="node-type">Inferencia Predictiva</span>
+                        </div>
+
+                        <div class="arrow" style="transform: rotate(90deg);"><i class="fa-solid fa-arrow-right"></i></div>
+
+                        <div class="node python-node" onclick="showInfo('eda2')">
+                            <i class="fa-solid fa-chart-simple"></i>
+                            <span class="node-name">EDA (Gráficas)</span>
+                            <span class="node-type">Visualización ML</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DETAIL INFO PANEL -->
+        <div class="info-panel" id="infoPanel">
+            <div class="info-header" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                <div class="info-title" id="infoTitle">Haz clic en cualquier nodo para explorar</div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button onclick="toggleExplicacion()" id="toggleDescBtn" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: #3B82F6; padding: 0.3rem 0.75rem; border-radius: 8px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 0.8rem; display: none; align-items: center; gap: 0.4rem; transition: all 0.2s;">
+                        <i class="fa-solid fa-eye-slash"></i> Ocultar Explicación
+                    </button>
+                    <div style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-circle-info"></i> Detalle de Arquitectura</div>
+                </div>
+            </div>
+            
+            <p class="info-desc" id="infoDesc">Selecciona un elemento de los diagramas superiores para visualizar su función técnica, sus conexiones, y ver ejemplos de código o configuraciones reales implementadas en la solución.</p>
+            
+            <!-- CODE PREVIEW BLOCK -->
+            <div class="code-section" id="codeSection">
+                <div class="code-label" id="codeLabel" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-code"></i>
+                        <span>Código Fuente / Configuración Estimada</span>
+                    </div>
+                    <button onclick="copiarCodigo(event)" style="background: rgba(255, 153, 0, 0.15); border: 1px solid rgba(255, 153, 0, 0.4); color: #FF9900; padding: 0.3rem 0.8rem; border-radius: 8px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+                        <i class="fa-regular fa-copy"></i> Copiar Código
+                    </button>
+                </div>
+                <pre class="code-block" id="codeBlock">Selecciona un componente para ver fragmentos de código...</pre>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // TAB SWITCHER FUNCTION
+        function switchTab(tabId) {
+            // Update active buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            // Update active tab contents with smooth transition
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+                setTimeout(() => {
+                    if (content.id === tabId) {
+                        content.classList.add('active');
+                    }
+                }, 50);
+            });
+
+            // Ocultar panel de especificaciones al cambiar de fase
+            document.getElementById('infoPanel').style.display = 'none';
+            activeKey = null;
+        }
+
+        // DETAILED SPECS FOR INTERACTIVE NODES
+        const details = {
+            aemet: {
+                title: "AEMET OpenData API",
+                desc: "Servicio de datos abiertos meteorológicos de la AEMET. Proporciona datos de climatología histórica, inventarios de estaciones y variables en tiempo real en formato JSON estructurado.",
+                codeLabel: "Ejemplo de Endpoint de Consulta (HTTP GET)",
+                code: `<span class="c-comment"># Endpoint para consulta diaria de climatología</span>
+https://opendata.aemet.es/opendata/api/valores/climatologicos/diarios/datos/fechaini/{fecha_inicio}/fechafin/{fecha_fin}/todasestaciones
+
+<span class="c-comment"># Parámetros requeridos en Headers:</span>
+headers = {
+    <span class="c-string">'cache-control'</span>: <span class="c-string">"no-cache"</span>,
+    <span class="c-string">'api_key'</span>: AEMET_API_KEY,
+    <span class="c-string">'accept'</span>: <span class="c-string">"application/json"</span>
+}`
+            },
+            lambda1: {
+                title: "AWS Lambda 1: Función de Ingesta y Descarga",
+                desc: "Función Serverless encargada de realizar llamadas a la API de AEMET, gestionar el sistema de autenticación de cabeceras de seguridad y descargar el fichero en bruto (datos crudos) de forma asíncrona.",
+                codeLabel: "extracción.py (Python de Lambda)",
+                code: `<span class="c-keyword">def</span> <span class="c-function">obtener_valores_climaticos_todas</span>(fecha_ini_utc, fecha_fin_utc, max_retries=<span class="c-number">15</span>):
+    url_base = <span class="c-string">f"https://opendata.aemet.es/.../todasestaciones"</span>
+    <span class="c-keyword">for</span> intento <span class="c-keyword">in</span> <span class="c-function">range</span>(max_retries):
+        response = requests.get(url_base, headers=headers, timeout=<span class="c-number">30</span>)
+        <span class="c-keyword">if</span> response.status_code == <span class="c-number">200</span>:
+            meta_datos = response.json()
+            <span class="c-keyword">if</span> meta_datos.get(<span class="c-string">'estado'</span>) == <span class="c-number">200</span>:
+                url_final = meta_datos.get(<span class="c-string">'datos'</span>)
+                datos_response = requests.get(url_final, timeout=<span class="c-number">30</span>)
+                <span class="c-keyword">return</span> datos_response.json()
+            <span class="c-keyword">elif</span> response.status_code == <span class="c-number">429</span>:
+                time.sleep(delay) <span class="c-comment"># Control de límites de velocidad</span>`
+            },
+            bucket1: {
+                title: "Amazon S3 Bucket 1: Datos Crudos",
+                desc: "Repositorio de almacenamiento de objetos configurado para archivar y retener las descargas en bruto (formato JSON) obtenidas directamente del API, garantizando trazabilidad y backup histórico.",
+                codeLabel: "Organización de Archivos en S3",
+                code: `bucket-aemet-raw/
+  ├── logs/
+  └── json/
+       ├── raw_data_2026_06_22.json
+       ├── raw_data_2026_06_23.json
+       └── raw_data_2026_06_24.json`
+            },
+            lambda2: {
+                title: "AWS Lambda 2: Limpieza y Transformación de Datos (ETL)",
+                desc: "Función Serverless modularizada en dos archivos para seguir las mejores prácticas de ingeniería de software (Clean Code): <code>funtion_limpieza.py</code> (procesamiento y tipado puro con Pandas/Numpy) y <code>lambda_function.py</code> (orquestador de integraciones con AWS). Lee archivos JSON sucios desde <code>entradas/json/</code>, ejecuta la limpieza, sube el resultado a <code>entradas/csv_limpio/</code> en formato CSV y elimina el archivo original sucio.<br><br><strong>Pasos para la configuración e importación en AWS Lambda:</strong><br>1. <strong>Preparar Despliegue (.ZIP):</strong> Crea localmente ambos archivos (<code>lambda_function.py</code> y <code>funtion_limpieza.py</code>) en el mismo nivel jerárquico, comprímelos en un ZIP y súbelo a la Lambda.<br>2. <strong>Capa AWS (Layer):</strong> Agrega la capa oficial <code>AWSSDKPandas-Python3X</code> desde la sección inferior de la consola de la Lambda.<br><a href='#' onclick='showCapaImage(event)' style='color: #FF9900; text-decoration: underline; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.25rem;'><i class='fa-regular fa-image'></i> Ocultar ejemplo interactivo de configuración</a><div id='capaImageContainer' style='display: block; margin-top: 1rem; background: #ffffff; color: #111827; border: 1px solid #d1d5db; border-radius: 12px; padding: 1.5rem; font-family: system-ui, -apple-system, sans-serif; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); max-width: 100%; text-align: left;'><div style='display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.75rem; margin-bottom: 1rem;'><h3 style='margin: 0; font-size: 1.25rem; font-weight: 700; color: #111827;'>Elija una capa</h3><span style='font-size: 1.25rem; color: #6b7280; cursor: pointer; font-weight: bold;'>&times;</span></div><div style='font-size: 0.85rem; color: #374151; margin-bottom: 1.25rem; line-height: 1.4;'><strong>Fuente de capa</strong> <span style='color: #2563eb; font-size: 0.8rem; margin-left: 0.25rem; cursor: pointer; text-decoration: underline;'>Información</span><br><span style='color: #4b5563;'>Elija entre capas con una versión ejecutable compatible y una arquitectura de conjunto de instrucciones o especifique el nombre de recurso de Amazon (ARN) de una versión de capa. También puede </span><a href=\'#\' onclick=\'event.preventDefault()\' style='color: #2563eb; text-decoration: none;\'>crear una nueva capa</a>.</div><div style='display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;'><div style='flex: 1; min-width: 220px; border: 2px solid #2563eb; background: #eff6ff; border-radius: 8px; padding: 1rem; display: flex; gap: 0.75rem; align-items: flex-start;'><input type='radio' checked disabled style='margin-top: 0.2rem; accent-color: #2563eb;'><div><strong style='font-size: 0.9rem; color: #111827; display: block; margin-bottom: 0.25rem;'>Capas de AWS</strong><span style='font-size: 0.75rem; color: #4b5563; line-height: 1.3; display: block;'>Elija una capa de una lista de capas proporcionadas por AWS.</span></div></div><div style='flex: 1; min-width: 220px; border: 1px solid #d1d5db; border-radius: 8px; padding: 1rem; display: flex; gap: 0.75rem; align-items: flex-start; opacity: 0.8;'><input type='radio' disabled style='margin-top: 0.2rem;'><div><strong style='font-size: 0.9rem; color: #111827; display: block; margin-bottom: 0.25rem;'>Capas personalizadas</strong><span style='font-size: 0.75rem; color: #4b5563; line-height: 1.3; display: block;'>Elija una capa de una lista de capas creadas por la cuenta de AWS.</span></div></div><div style='flex: 1; min-width: 220px; border: 1px solid #d1d5db; border-radius: 8px; padding: 1rem; display: flex; gap: 0.75rem; align-items: flex-start; opacity: 0.8;'><input type='radio' disabled style='margin-top: 0.2rem;'><div><strong style='font-size: 0.9rem; color: #111827; display: block; margin-bottom: 0.25rem;'>Especificar un ARN</strong><span style='font-size: 0.75rem; color: #4b5563; line-height: 1.3; display: block;'>Proporcione el ARN y especifique una capa.</span></div></div></div><div style='margin-bottom: 1.25rem;'><label style='display: block; font-size: 0.85rem; font-weight: 700; color: #111827; margin-bottom: 0.35rem;'>Capas de AWS</label><div style='display: flex; gap: 0.5rem; align-items: center;'><div style='flex: 1; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.9rem; background: #ffffff; display: flex; justify-content: space-between; align-items: center;'><span style='color: #111827;'>AWSSDKPandas-Python311</span><span style='font-size: 0.6rem; color: #6b7280;'>▼</span></div><button style='background: none; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem; color: #2563eb; display: flex; align-items: center;' disabled><i class='fa-solid fa-rotate-right' style='font-size: 0.9rem;'></i></button></div><span style='font-size: 0.75rem; color: #6b7280; display: block; margin-top: 0.25rem;'>Capas proporcionadas por AWS que son compatibles con el tiempo de ejecución de la función.</span></div><div style='margin-bottom: 1.5rem;'><label style='display: block; font-size: 0.85rem; font-weight: 700; color: #111827; margin-bottom: 0.35rem;'>Versión</label><div style='display: flex; gap: 0.5rem; align-items: center;'><div style='flex: 1; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.9rem; background: #ffffff; display: flex; justify-content: space-between; align-items: center;'><span style='color: #111827;'>31</span><span style='font-size: 0.6rem; color: #6b7280;'>▼</span></div><button style='background: none; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem; color: #2563eb; display: flex; align-items: center;' disabled><i class='fa-solid fa-rotate-right' style='font-size: 0.9rem;'></i></button></div></div><div style='background: #f9fafb; border: 1px dashed #e5e7eb; border-radius: 8px; padding: 1rem; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;'><div><strong style='display: block; color: #4b5563; font-size: 0.8rem; text-transform: uppercase;'>Descripción</strong><span style='color: #111827;'>AWS SDK for pandas Lambda Layer - 3.16.1 (Python 3.11)</span></div><div><strong style='display: block; color: #4b5563; font-size: 0.8rem; text-transform: uppercase;'>Tiempos de ejecución compatibles</strong><span style='color: #111827;'>Python 3.11</span></div><div><strong style='display: block; color: #4b5563; font-size: 0.8rem; text-transform: uppercase;'>Arquitecturas compatibles</strong><span style='color: #111827;'>x86_64</span></div></div><div style='display: flex; justify-content: flex-end; align-items: center; gap: 1.5rem; border-top: 1px solid #e5e7eb; padding-top: 1rem;'><a href=\'#\' onclick=\'event.preventDefault()\' style='color: #2563eb; text-decoration: none; font-size: 0.9rem; font-weight: 600;'>Cancelar</a><button style='background: #ff9900; border: none; color: #ffffff; padding: 0.5rem 1.5rem; border-radius: 20px; font-weight: 700; font-size: 0.9rem;'>Agregar</button></div></div><br>3. <strong>Configurar Evento (Trigger):</strong> Agrega un Trigger S3 sobre el prefijo <code>entradas/json/</code> y sufijo <code>.json</code>.<br><a href='#' onclick='showTriggerImage(event)' style='color: #FF9900; text-decoration: underline; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.25rem;'><i class='fa-regular fa-image'></i> Ocultar ejemplo interactivo de configuración</a><div id='triggerImageContainer' style='display: flex; margin-top: 1rem; display: flex; flex-direction: column; gap: 1.5rem; max-width: 100%; text-align: left;'><div style='background: #ffffff; color: #111827; border: 1px solid #d1d5db; border-radius: 12px; padding: 1.5rem; font-family: system-ui, -apple-system, sans-serif; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'><div style='font-size: 0.95rem; font-weight: 700; color: #111827; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;'><span style='font-size: 0.75rem;'>▼</span> Información general de la función <span style='color: #2563eb; font-size: 0.8rem; font-weight: normal; cursor: pointer; text-decoration: underline;'>Información</span></div><div style='display: flex; gap: 0.5rem; margin-bottom: 1.5rem;'><span style='background: #2563eb; color: #ffffff; font-size: 0.8rem; font-weight: bold; padding: 0.25rem 0.75rem; border-radius: 20px;'>Diagrama</span><span style='background: #f3f4f6; color: #4b5563; font-size: 0.8rem; padding: 0.25rem 0.75rem; border-radius: 20px; border: 1px solid #d1d5db;'>Plantilla</span></div><div style='display: flex; justify-content: space-between; align-items: center; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 8px; padding: 2rem; position: relative;'><button style='background: #ffffff; border: 2px solid #ff9900; color: #2563eb; font-weight: 700; padding: 0.5rem 1.25rem; border-radius: 20px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.35rem; box-shadow: 0 0 0 3px rgba(255, 153, 0, 0.25);'>+ Agregar desencadenador</button><div style='background: #ffffff; border: 1px solid #d1d5db; border-radius: 8px; padding: 1rem; width: 280px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 0.5rem;'><div style='display: flex; align-items: center; gap: 0.5rem;'><span style='background: #ff9900; color: #ffffff; padding: 0.25rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem;'>λ</span><div style='font-size: 0.85rem; font-weight: 700; color: #111827; line-height: 1.2; word-break: break-all;'>dai07rt-aemet-2026-lambda2-funcion-limpieza</div></div><div style='border-top: 1px solid #e5e7eb; padding-top: 0.5rem; display: flex; justify-content: space-between; font-size: 0.75rem; color: #4b5563;'><span>☷ Capas</span><span>(1)</span></div></div><button style='background: #ffffff; border: 1px solid #2563eb; color: #2563eb; font-weight: 700; padding: 0.5rem 1.25rem; border-radius: 20px; font-size: 0.9rem;' disabled>+ Agregar destino</button></div></div><div style='background: #ffffff; color: #111827; border: 1px solid #d1d5db; border-radius: 12px; padding: 1.5rem; font-family: system-ui, -apple-system, sans-serif; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'><h3 style='margin: 0 0 1.25rem 0; font-size: 1.25rem; font-weight: 700; color: #111827;'>Agregar desencadenador</h3><div style='border: 1px solid #d1d5db; border-radius: 8px; padding: 1.5rem; background: #ffffff;'><h4 style='margin: 0 0 1rem 0; font-size: 0.95rem; font-weight: 700; color: #111827;'>Configuración del desencadenador <span style='color: #2563eb; font-size: 0.8rem; font-weight: normal; cursor: pointer; text-decoration: underline; margin-left: 0.25rem;'>Información</span></h4><div style='margin-bottom: 1.25rem;'><div style='border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem 0.75rem; background: #ffffff; display: flex; justify-content: space-between; align-items: center;'><div style='display: flex; align-items: center; gap: 0.5rem;'><span style='background: #a3e635; color: #ffffff; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.7rem; font-weight: bold;'>S3</span><span style='font-size: 0.9rem; color: #111827;'>S3 <span style='font-size: 0.75rem; color: #6b7280; margin-left: 0.5rem;'>aws / asynchronous / storage</span></span></div><span style='font-size: 0.6rem; color: #6b7280;'>▼</span></div></div><div style='margin-bottom: 1.25rem;'><label style='display: block; font-size: 0.85rem; font-weight: 700; color: #111827; margin-bottom: 0.35rem;'>Bucket</label><div style='border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.9rem; background: #f3f4f6; color: #374151; display: flex; justify-content: space-between; align-items: center;'><span>s3://tu-bucket-aemet-2026</span><span style='color: #6b7280; cursor: pointer;'>✕</span></div><span style='font-size: 0.75rem; color: #6b7280; display: block; margin-top: 0.25rem;'>Región del bucket: eu-central-1</span></div><div style='margin-bottom: 1.25rem;'><label style='display: block; font-size: 0.85rem; font-weight: 700; color: #111827; margin-bottom: 0.35rem;'>Tipos de eventos</label><div style='border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem 0.75rem; background: #ffffff; min-height: 40px; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;'><span style='background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 0.8rem; padding: 0.2rem 0.6rem; border-radius: 4px; display: flex; align-items: center; gap: 0.35rem;'>Todos los eventos de creación de objetos <span style='font-weight: bold; cursor: pointer;'>✕</span></span></div></div><div style='margin-bottom: 1.25rem;'><label style='display: block; font-size: 0.85rem; font-weight: 700; color: #111827; margin-bottom: 0.35rem;'>Prefijo - Opcional</label><input type='text' value='entradas/json/' readonly style='width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.9rem; background: #ffffff; color: #111827; outline: none;'></div><div style='margin-bottom: 1.25rem;'><label style='display: block; font-size: 0.85rem; font-weight: 700; color: #111827; margin-bottom: 0.35rem;'>Sufijo - Opcional</label><input type='text' value='.json' readonly style='width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.9rem; background: #ffffff; color: #111827; outline: none;'></div><div style='margin-bottom: 1.5rem; display: flex; gap: 0.75rem; align-items: flex-start;'><input type='checkbox' checked disabled style='margin-top: 0.25rem; accent-color: #ff9900;'><div style='font-size: 0.8rem; color: #374151; line-height: 1.4;'><strong>Invocación recurrente</strong><br>Acepto que no se recomienda utilizar el mismo bucket de S3 para las entradas y las salidas, y que esta configuración puede provocar invocaciones recurrentes, así como también un aumento del uso de Lambda y de los costos.</div></div></div><div style='display: flex; justify-content: flex-end; align-items: center; gap: 1.5rem; margin-top: 1rem;'><a href=\'#\' onclick=\'event.preventDefault()\' style='color: #2563eb; text-decoration: none; font-size: 0.9rem; font-weight: 600;'>Cancelar</a><button style='background: #ff9900; border: none; color: #ffffff; padding: 0.5rem 1.5rem; border-radius: 20px; font-weight: 700; font-size: 0.9rem;'>Agregar</button></div></div></div><br>4. <strong>IAM Execution Role:</strong> Dota de permisos de lectura y escritura a la Lambda asociando la política administrada <code>AmazonS3FullAccess</code> al rol de ejecución de tu Lambda.<br><a href='#' onclick='showIamImage(event)' style='color: #FF9900; text-decoration: underline; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.25rem;'><i class='fa-regular fa-image'></i> Ocultar ejemplo interactivo de configuración</a><div id='iamImageContainer' style='display: flex; margin-top: 1rem; display: flex; flex-direction: column; gap: 1.5rem; max-width: 100%; text-align: left;'><div style='background: #ffffff; color: #111827; border: 1px solid #d1d5db; border-radius: 12px; padding: 1.5rem; font-family: system-ui, -apple-system, sans-serif; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'><div style='font-size: 0.9rem; font-weight: 700; color: #374151; margin-bottom: 0.5rem;'>Paso 1: Ir al Rol de Ejecución en Lambda</div><div style='border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; background: #ffffff;'><div style='font-size: 0.85rem; border-bottom: 2px solid #2563eb; padding-bottom: 0.25rem; display: inline-block; color: #2563eb; font-weight: 700; margin-bottom: 1rem;'>Configuración > Permisos</div><div style='background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 1rem; display: flex; align-items: center; justify-content: space-between;'><div><span style='font-size: 0.8rem; color: #4b5563; display: block; font-weight: bold;'>Nombre del rol</span><span style='font-size: 0.9rem; color: #2563eb; font-weight: 700; border: 2px solid #22c55e; padding: 0.25rem 0.5rem; border-radius: 4px;'>dai07rt-aemet-2026-lambda2-funcion-limpieza-role-xxxxxx</span></div><div style='display: flex; align-items: center; gap: 0.5rem;'><span style='color: #22c55e; font-size: 1.5rem;'>←</span><span style='background: #ef4444; color: #ffffff; font-size: 0.75rem; font-weight: bold; padding: 0.4rem 0.8rem; border-radius: 6px;'>Doy a este enlace para ir a IAM (Permisos)</span></div></div></div></div><div style='background: #ffffff; color: #111827; border: 1px solid #d1d5db; border-radius: 12px; padding: 1.5rem; font-family: system-ui, -apple-system, sans-serif; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'><div style='font-size: 0.9rem; font-weight: 700; color: #374151; margin-bottom: 0.5rem;'>Paso 2: En IAM, hacer clic en Agregar permisos</div><div style='border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; background: #ffffff;'><div style='display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; margin-bottom: 1rem;'><span style='font-size: 0.95rem; font-weight: bold; color: #111827;'>Políticas de permisos (1)</span><div style='border: 2px solid #22c55e; border-radius: 6px; padding: 0.15rem;'><button style='background: #ffffff; border: 1px solid #2563eb; color: #2563eb; font-weight: 700; padding: 0.4rem 1rem; border-radius: 4px; font-size: 0.85rem; display: flex; align-items: center; gap: 0.25rem;'>Agregar permisos <span style='font-size: 0.6rem;'>▼</span></button></div></div><div style='font-size: 0.8rem; color: #6b7280;'>Muestra la lista de políticas asociadas actualmente.</div></div></div><div style='background: #ffffff; color: #111827; border: 1px solid #d1d5db; border-radius: 12px; padding: 1.5rem; font-family: system-ui, -apple-system, sans-serif; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'><div style='font-size: 0.9rem; font-weight: 700; color: #374151; margin-bottom: 0.5rem;'>Paso 3: Buscar y seleccionar AmazonS3FullAccess</div><div style='border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; background: #ffffff;'><div style='margin-bottom: 1rem;'><input type='text' value='s3' readonly style='border: 1px solid #d1d5db; border-radius: 4px; padding: 0.4rem 0.75rem; font-size: 0.85rem; width: 220px;'><span style='font-size: 0.8rem; color: #4b5563; margin-left: 0.5rem;'>22 coincidencias</span></div><table style='width: 100%; border-collapse: collapse; font-size: 0.85rem;'><thead><tr style='background: #f9fafb; border-bottom: 1px solid #e5e7eb; text-align: left;'><th style='padding: 0.5rem;'><input type='checkbox' disabled></th><th style='padding: 0.5rem;'>Nombre de la política</th><th style='padding: 0.5rem;'>Tipo</th><th style='padding: 0.5rem;'>Descripción</th></tr></thead><tbody><tr style='background: #eff6ff; border-bottom: 1px solid #bfdbfe; font-weight: bold;'><td style='padding: 0.5rem; display: flex; align-items: center; gap: 0.25rem;'><span style='color: #22c55e; font-weight: bold;'>➔</span><input type='checkbox' checked disabled style='accent-color: #2563eb;'></td><td style='padding: 0.5rem; color: #2563eb;'>AmazonS3FullAccess</td><td style='padding: 0.5rem; color: #4b5563; font-weight: normal;'>Administrada por AWS</td><td style='padding: 0.5rem; color: #4b5563; font-weight: normal; font-size: 0.75rem;'>Provides full access to all buckets via S3...</td></tr><tr style='border-bottom: 1px solid #e5e7eb; opacity: 0.6;'><td style='padding: 0.5rem;'><input type='checkbox' disabled></td><td style='padding: 0.5rem; color: #2563eb;'>AmazonS3ReadOnlyAccess</td><td style='padding: 0.5rem;'>Administrada por AWS</td><td style='padding: 0.5rem; font-size: 0.75rem;'>Provides read only access to all buckets...</td></tr></tbody></table></div></div><div style='background: #ffffff; color: #111827; border: 1px solid #d1d5db; border-radius: 12px; padding: 1.5rem; font-family: system-ui, -apple-system, sans-serif; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'><div style='font-size: 0.9rem; font-weight: 700; color: #374151; margin-bottom: 0.5rem;'>Paso 4: Confirmación de asociación del Rol</div><div style='border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; background: #ffffff; display: flex; flex-direction: column; gap: 1rem;'><div style='background: #ecfdf5; border-left: 4px solid #10b981; color: #065f46; padding: 0.75rem 1rem; border-radius: 4px; font-size: 0.85rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center;'><span>✓ La política se ha asociado correctamente al rol.</span><span style='cursor: pointer; opacity: 0.7;'>✕</span></div><div style='font-size: 0.9rem; font-weight: bold; color: #111827;'>Políticas de permisos (2)</div><table style='width: 100%; border-collapse: collapse; font-size: 0.85rem;'><thead><tr style='background: #f9fafb; border-bottom: 1px solid #e5e7eb; text-align: left;'><th style='padding: 0.5rem;'>Nombre de la política</th><th style='padding: 0.5rem;'>Tipo</th><th style='padding: 0.5rem;'>Entidades asociadas</th></tr></thead><tbody><tr style='border-bottom: 1px solid #e5e7eb;'><td style='padding: 0.5rem; color: #2563eb; display: flex; align-items: center; gap: 0.5rem;'><span style='color: #22c55e; font-weight: bold;'>➔</span><strong>AmazonS3FullAccess</strong></td><td style='padding: 0.5rem; color: #4b5563;'>Administrada por AWS</td><td style='padding: 0.5rem; color: #4b5563;'>2</td></tr><tr style='border-bottom: 1px solid #e5e7eb;'><td style='padding: 0.5rem; color: #2563eb; padding-left: 1.5rem;'>AWSLambdaBasicExecutionRole-2e97b3c6...</td><td style='padding: 0.5rem; color: #4b5563;'>Administrada por el cliente</td><td style='padding: 0.5rem; color: #4b5563;'>1</td></tr></tbody></table></div></div></div><br>5. <strong>Configurar Variable de Entorno:</strong> Agrega la variable de entorno <code>BUCKET_DESTINO</code> con el nombre de tu bucket de datos limpios en la configuración de la Lambda.",
+                files: [
+                    {
+                        label: "funtion_limpieza.py (Módulo de transformación con Pandas)",
+                        code: `<span class="c-keyword">import</span> pandas <span class="c-keyword">as</span> pd
+<span class="c-keyword">import</span> numpy <span class="c-keyword">as</span> np
+
+<span class="c-keyword">def</span> <span class="c-function">limpiar_y_cargar_datos_fechas_todas_estaciones</span>(datos_json):
+    <span class="c-keyword">if</span> <span class="c-keyword">not</span> datos_json:
+        <span class="c-keyword">return</span> pd.DataFrame()
+        
+    datos_lista = []
+    <span class="c-keyword">for</span> dia <span class="c-keyword">in</span> datos_json:
+        datos_lista.append({ 
+            <span class="c-string">"fecha"</span>      : dia.get(<span class="c-string">"fecha"</span>),
+            <span class="c-string">"indicativo"</span> : dia.get(<span class="c-string">"indicativo"</span>),
+            <span class="c-string">"nombre"</span>     : dia.get(<span class="c-string">"nombre"</span>),
+            <span class="c-string">"provincia"</span>  : dia.get(<span class="c-string">"provincia"</span>),
+            <span class="c-string">"altitud"</span>    : dia.get(<span class="c-string">"altitud"</span>),
+            <span class="c-string">"tmed"</span>       : dia.get(<span class="c-string">"tmed"</span>),
+            <span class="c-string">"prec"</span>       : dia.get(<span class="c-string">"prec"</span>),
+            <span class="c-string">"tmin"</span>       : dia.get(<span class="c-string">"tmin"</span>),
+            <span class="c-string">"horatmin"</span>   : dia.get(<span class="c-string">"horatmin"</span>),
+            <span class="c-string">"tmax"</span>       : dia.get(<span class="c-string">"tmax"</span>),
+            <span class="c-string">"horatmax"</span>   : dia.get(<span class="c-string">"horatmax"</span>),
+            <span class="c-string">"dir"</span>        : dia.get(<span class="c-string">"dir"</span>),
+            <span class="c-string">"velmedia"</span>   : dia.get(<span class="c-string">"velmedia"</span>),
+            <span class="c-string">"racha"</span>      : dia.get(<span class="c-string">"racha"</span>),
+            <span class="c-string">"horaracha"</span>  : dia.get(<span class="c-string">"horaracha"</span>),
+            <span class="c-string">"sol"</span>        : dia.get(<span class="c-string">"sol"</span>),
+            <span class="c-string">"presMax"</span>    : dia.get(<span class="c-string">"presMax"</span>),
+            <span class="c-string">"horaPresMax"</span>: dia.get(<span class="c-string">"horaPresMax"</span>),
+            <span class="c-string">"presMin"</span>    : dia.get(<span class="c-string">"presMin"</span>),
+            <span class="c-string">"horaPresMin"</span>: dia.get(<span class="c-string">"horaPresMin"</span>),
+            <span class="c-string">"hrMedia"</span>    : dia.get(<span class="c-string">"hrMedia"</span>),
+            <span class="c-string">"hrMax"</span>      : dia.get(<span class="c-string">"hrMax"</span>),
+            <span class="c-string">"horaHrMax"</span>  : dia.get(<span class="c-string">"horaHrMax"</span>),
+            <span class="c-string">"hrMin"</span>      : dia.get(<span class="c-string">"hrMin"</span>),
+            <span class="c-string">"horaHrMin"</span>  : dia.get(<span class="c-string">"horaHrMin"</span>)
+        })
+
+    df = pd.DataFrame(datos_lista)
+
+    <span class="c-comment"># 1. Ajustes básicos</span>
+    df[<span class="c-string">"fecha"</span>]      = pd.to_datetime(df[<span class="c-string">"fecha"</span>])
+    df[<span class="c-string">"altitud"</span>]    = pd.to_numeric(df[<span class="c-string">"altitud"</span>], errors=<span class="c-string">"coerce"</span>)
+    df[<span class="c-string">"indicativo"</span>] = df[<span class="c-string">"indicativo"</span>].astype(<span class="c-function">str</span>)
+    df[<span class="c-string">"nombre"</span>]     = df[<span class="c-string">"nombre"</span>].astype(<span class="c-function">str</span>)
+    df[<span class="c-string">"provincia"</span>]  = df[<span class="c-string">"provincia"</span>].astype(<span class="c-function">str</span>)
+    df[<span class="c-string">"dir"</span>]        = df[<span class="c-string">"dir"</span>].astype(<span class="c-function">str</span>)
+    df[<span class="c-string">"horaracha"</span>]  = df[<span class="c-string">"horaracha"</span>].astype(<span class="c-function">str</span>)
+
+    <span class="c-keyword">def</span> <span class="c-function">a_float</span>(columna):
+        <span class="c-keyword">if</span> columna <span class="c-keyword">is</span> <span class="c-keyword">None</span>:
+            <span class="c-keyword">return</span> np.nan
+        <span class="c-keyword">return</span> columna.astype(<span class="c-function">str</span>).str.replace(<span class="c-string">","</span>, <span class="c-string">"."</span>).replace(<span class="c-string">""</span>, <span class="c-string">"nan"</span>).astype(np.float32)
+
+    <span class="c-comment"># 2. Tipado numérico</span>
+    columnas_numericas = [<span class="c-string">"tmed"</span>, <span class="c-string">"tmin"</span>, <span class="c-string">"tmax"</span>, <span class="c-string">"velmedia"</span>, <span class="c-string">"racha"</span>, <span class="c-string">"sol"</span>, <span class="c-string">"presMax"</span>, <span class="c-string">"presMin"</span>, <span class="c-string">"hrMedia"</span>, <span class="c-string">"hrMax"</span>, <span class="c-string">"hrMin"</span>]
+    <span class="c-keyword">for</span> col <span class="c-keyword">in</span> columnas_numericas:
+        <span class="c-keyword">if</span> col <span class="c-keyword">in</span> df.columns:
+            df[col] = a_float(df[col])
+
+    <span class="c-comment"># 3. Precipitación (Ip -> 0.0)</span>
+    <span class="c-keyword">if</span> <span class="c-string">"prec"</span> <span class="c-keyword">in</span> df.columns:
+        df[<span class="c-string">"prec"</span>] = df[<span class="c-string">"prec"</span>].astype(<span class="c-function">str</span>).str.replace(<span class="c-string">"Ip"</span>, <span class="c-string">"0.0"</span>).str.replace(<span class="c-string">","</span>, <span class="c-string">"."</span>).replace(<span class="c-string">""</span>, <span class="c-string">"0.0"</span>)
+        df[<span class="c-string">"prec"</span>] = pd.to_numeric(df[<span class="c-string">"prec"</span>], errors=<span class="c-string">"coerce"</span>).astype(np.float32)
+
+    <span class="c-comment"># 4. Formatear horas</span>
+    columnas_tiempo = [<span class="c-string">"horatmin"</span>, <span class="c-string">"horatmax"</span>, <span class="c-string">"horaHrMax"</span>, <span class="c-string">"horaHrMin"</span>]
+    <span class="c-keyword">for</span> col <span class="c-keyword">in</span> columnas_tiempo:
+        <span class="c-keyword">if</span> col <span class="c-keyword">in</span> df.columns:
+            df[col] = df[col].astype(<span class="c-function">str</span>).replace([<span class="c-string">"Varias"</span>, <span class="c-string">"nan"</span>, <span class="c-string">"None"</span>, <span class="c-string">""</span>], np.nan)
+            df[col] = pd.to_datetime(df[col], format=<span class="c-string">"%H:%M"</span>, errors=<span class="c-string">"coerce"</span>).dt.time
+
+    <span class="c-comment"># 5. Otras horas</span>
+    columnas_hora_sola = [<span class="c-string">"horaPresMax"</span>, <span class="c-string">"horaPresMin"</span>]
+    <span class="c-keyword">for</span> col <span class="c-keyword">in</span> columnas_hora_sola:
+        <span class="c-keyword">if</span> col <span class="c-keyword">in</span> df.columns:
+            df[col] = df[col].astype(<span class="c-function">str</span>).replace([<span class="c-string">"Varias"</span>, <span class="c-string">"nan"</span>, <span class="c-string">"None"</span>, <span class="c-string">""</span>], np.nan)
+            df[col] = pd.to_datetime(df[col], format=<span class="c-string">"%H"</span>, errors=<span class="c-string">"coerce"</span>).dt.time
+
+    <span class="c-keyword">return</span> df`
+                    },
+                    {
+                        label: "lambda_function.py (Orquestador AWS)",
+                        code: `<span class="c-keyword">import</span> json
+<span class="c-keyword">import</span> boto3
+<span class="c-keyword">import</span> os
+<span class="c-keyword">from</span> funtion_limpieza <span class="c-keyword">import</span> limpiar_y_cargar_datos_fechas_todas_estaciones
+
+s3_client = boto3.client(<span class="c-string">'s3'</span>)
+
+<span class="c-keyword">def</span> <span class="c-function">lambda_handler</span>(event, context):
+    <span class="c-keyword">try</span>:
+        bucket_destino = os.environ.get(<span class="c-string">'BUCKET_DESTINO'</span>)
+        <span class="c-keyword">if</span> <span class="c-keyword">not</span> bucket_destino:
+            <span class="c-keyword">raise</span> ValueError(<span class="c-string">"La variable de entorno BUCKET_DESTINO no está configurada"</span>)
+            
+        bucket_origen = event[<span class="c-string">'Records'</span>][<span class="c-number">0</span>][<span class="c-string">'s3'</span>][<span class="c-string">'bucket'</span>][<span class="c-string">'name'</span>]
+        key_origen = event[<span class="c-string">'Records'</span>][<span class="c-number">0</span>][<span class="c-string">'s3'</span>][<span class="c-string">'object'</span>][<span class="c-string">'key'</span>]
+        
+        response = s3_client.get_object(Bucket=bucket_origen, Key=key_origen)
+        contenido_json = json.loads(response[<span class="c-string">'Body'</span>].read().decode(<span class="c-string">'utf-8'</span>))
+        
+        df_limpio = limpiar_y_cargar_datos_fechas_todas_estaciones(contenido_json)
+        <span class="c-keyword">if</span> df_limpio.empty:
+            <span class="c-keyword">return</span> {<span class="c-string">'statusCode'</span>: <span class="c-number">200</span>, <span class="c-string">'body'</span>: json.dumps(<span class="c-string">'Sin datos válidos en el archivo'</span>)}
+            
+        csv_limpio_str = df_limpio.to_csv(index=False)
+        key_destino = key_origen.replace(<span class="c-string">"entradas/json/"</span>, <span class="c-string">"entradas/csv_limpio/"</span>).replace(<span class="c-string">".json"</span>, <span class="c-string">".csv"</span>)
+        
+        s3_client.put_object(Bucket=bucket_destino, Key=key_destino, Body=csv_limpio_str, ContentType=<span class="c-string">'text/csv'</span>)
+        s3_client.delete_object(Bucket=bucket_origen, Key=key_origen)
+        
+        <span class="c-keyword">return</span> {
+            <span class="c-string">'statusCode'</span>: <span class="c-number">200</span>,
+            <span class="c-string">'body'</span>: json.dumps(f<span class="c-string">'Archivo procesado y trasladado exitosamente a bucket destino: {key_destino}'</span>)
+        }
+    <span class="c-keyword">except</span> Exception <span class="c-keyword">as</span> e:
+        print(f<span class="c-string">"Error en ETL: {str(e)}"</span>)
+        <span class="c-keyword">raise</span> e`
+                    }
+                ]
+            },
+            bucket2: {
+                title: "Amazon S3 Bucket 2: Datos Limpios",
+                desc: "Almacenamiento en S3 de los ficheros depurados y estructurados en formato CSV limpios, listos para ser indexados a PostgreSQL u otras herramientas analíticas de forma optimizada.<br><br><strong>Creación del Bucket de Destino en AWS S3:</strong><br>Para evitar bucles recursivos y garantizar aislamiento de seguridad, creamos un bucket específico de destino para los CSV limpios.<br><a href='#' onclick='showS3CreateImage(event)' style='color: #FF9900; text-decoration: underline; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.25rem;'><i class='fa-regular fa-image'></i> Ocultar ejemplo interactivo de configuración</a><div id='s3CreateImageContainer' style='display: flex; margin-top: 1rem; display: flex; flex-direction: column; gap: 1.5rem; max-width: 100%; text-align: left;'><div style='background: #ffffff; color: #111827; border: 1px solid #d1d5db; border-radius: 12px; padding: 1.5rem; font-family: system-ui, -apple-system, sans-serif; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'><div style='font-size: 0.85rem; color: #4b5563; margin-bottom: 0.75rem;'>Amazon S3 &gt; Buckets &gt; Crear bucket</div><h3 style='margin: 0 0 0.5rem 0; font-size: 1.4rem; font-weight: 700; color: #111827;'>Crear bucket <span style='font-size: 0.8rem; font-weight: normal; color: #2563eb; cursor: pointer; text-decoration: underline;'>Información</span></h3><p style='margin: 0 0 1.25rem 0; font-size: 0.8rem; color: #4b5563;'>Los buckets son contenedores de datos almacenados en S3.</p><div style='border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; background: #ffffff; margin-bottom: 1.5rem;'><h4 style='margin: 0 0 1rem 0; font-size: 0.95rem; font-weight: 700; color: #111827;'>Configuración general</h4><div style='margin-bottom: 1.25rem;'><label style='display: block; font-size: 0.85rem; font-weight: 700; color: #4b5563; margin-bottom: 0.25rem;'>Región de AWS</label><span style='font-size: 0.9rem; color: #111827; font-weight: bold; display: block;'>Europa (Fráncfort) eu-central-1</span></div><div style='margin-bottom: 1.25rem;'><label style='display: block; font-size: 0.85rem; font-weight: 700; color: #4b5563; margin-bottom: 0.25rem;'>Tipo de bucket <span style='color: #2563eb; font-size: 0.75rem; font-weight: normal; cursor: pointer; text-decoration: underline; margin-left: 0.25rem;'>Información</span></label><div style='display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;'><div style='flex: 1; min-width: 200px; border: 2px solid #2563eb; background: #eff6ff; border-radius: 6px; padding: 0.75rem; display: flex; gap: 0.5rem; align-items: flex-start;'><input type='radio' checked disabled style='margin-top: 0.15rem; accent-color: #2563eb;'><div><strong style='font-size: 0.85rem; color: #111827; display: block;'>Uso general</strong><span style='font-size: 0.75rem; color: #4b5563;'>Recomendado para la mayoría de los casos de uso...</span></div></div><div style='flex: 1; min-width: 200px; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.75rem; display: flex; gap: 0.5rem; align-items: flex-start; opacity: 0.6;'><input type='radio' disabled style='margin-top: 0.15rem;'><div><strong style='font-size: 0.85rem; color: #111827; display: block;'>Directorio</strong><span style='font-size: 0.75rem; color: #4b5563;'>Recomendado para los casos de uso de baja latencia...</span></div></div></div></div><div style='margin-bottom: 1.25rem;'><label style='display: block; font-size: 0.85rem; font-weight: 700; color: #111827; margin-bottom: 0.35rem;'>Nombre del bucket <span style='color: #2563eb; font-size: 0.75rem; font-weight: normal; cursor: pointer; text-decoration: underline; margin-left: 0.25rem;'>Información</span></label><input type='text' value='dai07rt-proyecto-aemet-2026-limpios' readonly style='width: 100%; border: 2px solid #22c55e; border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.9rem; background: #ffffff; color: #111827; outline: none; font-weight: bold;'><span style='font-size: 0.75rem; color: #6b7280; display: block; margin-top: 0.25rem;'>Los nombres de los buckets deben ser únicos en todo el espacio de nombres de AWS.</span></div></div><div style='border: 1px solid #d1d5db; border-radius: 8px; padding: 1.25rem; background: #ffffff; position: relative;'><h4 style='margin: 0 0 0.5rem 0; font-size: 0.95rem; font-weight: 700; color: #111827;'>Propiedad de objetos <span style='color: #2563eb; font-size: 0.75rem; font-weight: normal; cursor: pointer; text-decoration: underline; margin-left: 0.25rem;'>Información</span></h4><p style='margin: 0 0 1rem 0; font-size: 0.75rem; color: #4b5563;'>Controle la propiedad de los objetos escritos en este bucket...</p><div style='display: flex; gap: 1rem; flex-wrap: wrap;'><div style='flex: 1; min-width: 200px; border: 2px solid #2563eb; background: #eff6ff; border-radius: 6px; padding: 0.75rem; display: flex; gap: 0.5rem; align-items: flex-start; position: relative;'><input type='radio' checked disabled style='margin-top: 0.15rem; accent-color: #2563eb;'><div><strong style='font-size: 0.85rem; color: #111827; display: block;'>ACL deshabilitadas (recomendado)</strong><span style='font-size: 0.75rem; color: #4b5563;'>Todos los objetos de este bucket son propiedad de esta cuenta...</span></div><div style='position: absolute; top: -10px; left: 50%; color: #22c55e; font-size: 1.5rem; font-weight: bold;'>➔</div></div><div style='flex: 1; min-width: 200px; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.75rem; display: flex; gap: 0.5rem; align-items: flex-start; opacity: 0.6;'><input type='radio' disabled style='margin-top: 0.15rem;'><div><strong style='font-size: 0.85rem; color: #111827; display: block;'>ACL habilitadas</strong><span style='font-size: 0.75rem; color: #4b5563;'>Los objetos de este bucket pueden ser propiedad de otras cuentas...</span></div></div></div></div></div></div>",
+                codeLabel: "carga.py (Integración con Boto3)",
+                code: `<span class="c-keyword">import</span> boto3
+
+s3 = boto3.client(<span class="c-string">"s3"</span>)
+bucket = <span class="c-string">"dai07rt-proyecto-aemet-2026-limpios"</span>
+
+<span class="c-comment"># Subida automatizada de los datasets limpios</span>
+s3.upload_file(
+    Filename=str(csv_path),
+    Bucket=bucket,
+    Key=f"csv/climaticos_{anio}.csv"
+)`
+            },
+            rds: {
+                title: "Amazon RDS: PostgreSQL",
+                desc: "Base de datos relacional PostgreSQL administrada. Almacena las tablas normalizadas de estaciones y valores meteorológicos históricos para consultas rápidas.",
+                codeLabel: "SQL de Creación de Tablas (DDL)",
+                code: `<span class="c-keyword">CREATE TABLE</span> IF NOT EXISTS estaciones (
+    id <span class="c-keyword">VARCHAR</span>(<span class="c-number">6</span>) <span class="c-keyword">PRIMARY KEY</span>,
+    nombre <span class="c-keyword">VARCHAR</span>(<span class="c-number">100</span>),
+    provincia <span class="c-keyword">VARCHAR</span>(<span class="c-number">255</span>),
+    altitud <span class="c-keyword">FLOAT</span>
+);
+
+<span class="c-keyword">CREATE TABLE</span> IF NOT EXISTS datos_climaticos (
+    fecha <span class="c-keyword">DATE</span>,
+    id <span class="c-keyword">VARCHAR</span>(<span class="c-number">6</span>),
+    tmed <span class="c-keyword">FLOAT</span>,
+    prec <span class="c-keyword">FLOAT</span>,
+    tmin <span class="c-keyword">FLOAT</span>,
+    tmax <span class="c-keyword">FLOAT</span>,
+    <span class="c-keyword">PRIMARY KEY</span> (id, fecha)
+);`
+            },
+            streamlit: {
+                title: "Streamlit Web App",
+                desc: "Interfaz gráfica del usuario escrita en Python. Sirve como frontend para consultar datos meteorológicos con lenguaje natural y visualizar gráficas de tendencias y predicciones.",
+                codeLabel: "Ejemplo de Interfaz con Streamlit",
+                code: `<span class="c-keyword">import</span> streamlit <span class="c-keyword">as</span> st
+
+st.title(<span class="c-string">"Visualización Climática AEMET 🌦️"</span>)
+st.sidebar.header(<span class="c-string">"Controles de Búsqueda"</span>)
+
+pregunta = st.text_input(<span class="c-string">"Escribe tu pregunta sobre el clima:"</span>)
+<span class="c-keyword">if</span> st.button(<span class="c-string">"Consultar"</span>):
+    st.write(<span class="c-string">"Enviando consulta a través de LangChain..."</span>)`
+            },
+            langchain: {
+                title: "Orquestador LangChain",
+                desc: "Orquestador de LLM que traduce las preguntas en lenguaje natural hechas en Streamlit a comandos estructurados SQL o llamadas de API interpretables por el servicio FastAPI.",
+                codeLabel: "Integración de Agente NLP",
+                code: `<span class="c-keyword">from</span> langchain.agents <span class="c-keyword">import</span> create_sql_agent
+<span class="c-keyword">from</span> langchain.sql_database <span class="c-keyword">import</span> SQLDatabase
+
+db = SQLDatabase.from_uri(<span class="c-string">"postgresql://user:pass@host/aemet"</span>)
+agent_executor = create_sql_agent(llm=openai_model, db=db, verbose=<span class="c-keyword">True</span>)
+
+<span class="c-comment"># El agente traduce texto a SQL y lo ejecuta en la base de datos</span>
+resultado = agent_executor.run(<span class="c-string">"¿Cuál fue el día más lluvioso en Madrid en 2025?"</span>)`
+            },
+            fastapi1: {
+                title: "FastAPI en EC2: Servicio A (API RDS)",
+                desc: "Servicio API REST que conecta de manera segura la aplicación cliente (Streamlit) con el servidor de base de datos RDS PostgreSQL, abstrayendo las consultas directas.",
+                codeLabel: "FastAPI Endpoint de Datos",
+                code: `<span class="c-keyword">from</span> fastapi <span class="c-keyword">import</span> FastAPI
+<span class="c-keyword">import</span> psycopg
+
+app = FastAPI()
+
+@app.get(<span class="c-string">"/api/clima/{indicativo}"</span>)
+<span class="c-keyword">def</span> <span class="c-function">obtener_historico</span>(indicativo: <span class="c-function">str</span>):
+    with psycopg.connect(dsn) as conn:
+        with conn.cursor() as cur:
+            cur.execute(<span class="c-string">"SELECT * FROM datos_climaticos WHERE id = %s"</span>, (indicativo,))
+            <span class="c-keyword">return</span> cur.fetchall()`
+            },
+            rds_query: {
+                title: "RDS PostgreSQL: Consultas en Tiempo Real",
+                desc: "Procesamiento de las sentencias SQL de consulta recibidas desde FastAPI. Ejecuta índices sobre claves compuestas (id, fecha) para garantizar respuestas en milisegundos.",
+                codeLabel: "Consulta de Agrupación de Datos",
+                code: `<span class="c-keyword">SELECT</span> provincia, <span class="c-function">AVG</span>(tmed) <span class="c-keyword">as</span> temp_media
+<span class="c-keyword">FROM</span> datos_climaticos
+<span class="c-keyword">WHERE</span> fecha <span class="c-keyword">BETWEEN</span> <span class="c-string">'2026-01-01'</span> <span class="c-keyword">AND</span> <span class="c-string">'2026-05-30'</span>
+<span class="c-keyword">GROUP BY</span> provincia;`
+            },
+            fastapi2: {
+                title: "FastAPI en EC2: Servicio B (API Inferencia)",
+                desc: "Servicio API dedicado a procesar llamadas de predicciones de machine learning. Recibe variables climatológicas y ejecuta los modelos cargados en memoria.",
+                codeLabel: "FastAPI Endpoint de Predicción",
+                code: `@app.post(<span class="c-string">"/api/predict"</span>)
+<span class="c-keyword">def</span> <span class="c-function">realizar_prediccion</span>(datos: ModelInputSchema):
+    <span class="c-comment"># Convertimos los datos de entrada a DataFrame para el modelo</span>
+    X = pd.DataFrame([datos.dict()])
+    prediccion = modelo_meteorologico.predict(X)
+    <span class="c-keyword">return</span> {<span class="c-string">"prediccion"</span>: <span class="c-function">float</span>(prediccion[<span class="c-number">0</span>])}`
+            },
+            modelos: {
+                title: "Modelos Predictivos ML (Scikit-Learn/TensorFlow)",
+                desc: "Ficheros de modelos serializados (.pkl / joblib) previamente entrenados con el histórico de AEMET. Permiten estimar la evolución de las temperaturas y probabilidades de precipitaciones.",
+                codeLabel: "Inferencia en Python",
+                code: `<span class="c-keyword">import</span> joblib
+
+<span class="c-comment"># Carga del modelo entrenado</span>
+modelo_meteorologico = joblib.load(<span class="c-string">"modelo_aemet_v1.pkl"</span>)
+
+<span class="c-comment"># Predicción matemática</span>
+y_pred = modelo_meteorologico.predict(X_new)`
+            },
+            eda1: {
+                title: "EDA: Gráficas de Datos Históricos",
+                desc: "Visualizaciones dinámicas en Streamlit con gráficos interactivos de series temporales de la AEMET creadas a partir de las consultas a la base de datos.",
+                codeLabel: "Graficado Interactiva en Streamlit",
+                code: `<span class="c-keyword">import</span> plotly.express <span class="c-keyword">as</span> px
+
+<span class="c-comment"># Crear gráfica de líneas interactiva</span>
+fig = px.line(df_filtrado, x=<span class="c-string">'fecha'</span>, y=<span class="c-string">'tmed'</span>, title=<span class="c-string">'Temperatura Media Histórica'</span>)
+st.plotly_chart(fig, use_container_width=<span class="c-keyword">True</span>)`
+            },
+            eda2: {
+                title: "EDA: Gráficas de Predicciones Meteorológicas",
+                desc: "Visualizaciones de las inferencias estimadas por los modelos predictivos de Machine Learning, comparando el comportamiento histórico con el previsto.",
+                codeLabel: "Visualización de Inferencia",
+                code: `<span class="c-keyword">import</span> matplotlib.pyplot <span class="c-keyword">as</span> plt
+
+fig, ax = plt.subplots()
+ax.plot(df_real[<span class="c-string">'fecha'</span>], df_real[<span class="c-string">'tmax'</span>], label=<span class="c-string">'Máxima Real'</span>)
+ax.plot(df_pred[<span class="c-string">'fecha'</span>], df_pred[<span class="c-string">'tmax_pred'</span>], label=<span class="c-string">'Máxima Predicha'</span>, linestyle=<span class="c-string">'--'</span>)
+st.pyplot(fig)`
+            }
+        };
+
+        // INTERACTIVE SPECS HANDLER
+        let activeKey = null;
+
+        function showInfo(key) {
+            const panel = document.getElementById('infoPanel');
+            const title = document.getElementById('infoTitle');
+            const desc = document.getElementById('infoDesc');
+            const codeSection = document.getElementById('codeSection');
+
+            // Si se hace clic en el mismo nodo que ya está activo, se oculta el panel
+            if (activeKey === key) {
+                panel.style.display = 'none';
+                activeKey = null;
+                return;
+            }
+
+            if (details[key]) {
+                activeKey = key;
+                panel.style.display = 'flex'; // Hacemos el panel visible
+                title.innerText = details[key].title;
+                desc.innerHTML = details[key].desc;
+                
+                // Aseguramos que la explicación sea visible al cambiar de componente
+                desc.style.display = 'block';
+                const toggleBtn = document.getElementById('toggleDescBtn');
+                if (toggleBtn) {
+                    toggleBtn.style.display = 'flex';
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar Explicación';
+                }
+                
+                let files = [];
+                if (details[key].files) {
+                    files = details[key].files;
+                } else if (details[key].code) {
+                    files = [{ label: details[key].codeLabel, code: details[key].code }];
+                }
+
+                if (files.length > 0) {
+                    codeSection.style.display = 'flex';
+                    codeSection.style.flexDirection = 'column';
+                    codeSection.style.gap = '1.5rem';
+                    codeSection.innerHTML = files.map((file, index) => `
+                        <div class="file-code-container" style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
+                            <div class="code-label" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="fa-solid fa-code"></i>
+                                    <span>${file.label}</span>
+                                </div>
+                                <button onclick="copiarAlPortapapeles(this, ${index})" style="background: rgba(255, 153, 0, 0.15); border: 1px solid rgba(255, 153, 0, 0.4); color: #FF9900; padding: 0.3rem 0.8rem; border-radius: 8px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+                                    <i class="fa-regular fa-copy"></i> Copiar Código
+                                </button>
+                            </div>
+                            <pre class="code-block" id="code-block-${index}" style="background: var(--code-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; font-family: 'Consolas', 'Courier New', Courier, monospace; font-size: 0.9rem; line-height: 1.5; color: #A9B2C3; overflow-x: auto; max-height: 380px; white-space: pre; user-select: text; -webkit-user-select: text;">${file.code}</pre>
+                        </div>
+                    `).join('');
+                } else {
+                    codeSection.style.display = 'none';
+                    codeSection.innerHTML = '';
+                }
+
+                // Smooth blink effect to capture user's attention
+                panel.style.transition = 'none';
+                panel.style.opacity = '0.5';
+                setTimeout(() => {
+                    panel.style.transition = 'opacity 0.3s ease';
+                    panel.style.opacity = '1';
+                }, 50);
+            }
+        }
+
+        // FUNCTION TO SHOW / HIDE COMPONENT EXPLANATION
+        function toggleExplicacion() {
+            const desc = document.getElementById('infoDesc');
+            const btn = document.getElementById('toggleDescBtn');
+            if (desc.style.display === 'none') {
+                desc.style.display = 'block';
+                btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar Explicación';
+            } else {
+                desc.style.display = 'none';
+                btn.innerHTML = '<i class="fa-solid fa-eye"></i> Mostrar Explicación';
+            }
+        }
+
+        // FUNCTION TO SHOW / HIDE AWS LAYER SCREENSHOT
+        function showCapaImage(event) {
+            event.preventDefault();
+            const container = document.getElementById('capaImageContainer');
+            const link = event.currentTarget;
+            if (container.style.display === 'none' || !container.style.display) {
+                container.style.display = 'block';
+                link.innerHTML = "<i class='fa-regular fa-image'></i> Ocultar captura de pantalla";
+            } else {
+                container.style.display = 'none';
+                link.innerHTML = "<i class='fa-regular fa-image'></i> Ver captura de pantalla de ejemplo";
+            }
+        }
+
+        // FUNCTION TO SHOW / HIDE AWS S3 TRIGGER SCREENSHOT
+        function showTriggerImage(event) {
+            event.preventDefault();
+            const container = document.getElementById('triggerImageContainer');
+            const link = event.currentTarget;
+            if (container.style.display === 'none' || !container.style.display) {
+                container.style.display = 'flex';
+                link.innerHTML = "<i class='fa-regular fa-image'></i> Ocultar captura de pantalla";
+            } else {
+                container.style.display = 'none';
+                link.innerHTML = "<i class='fa-regular fa-image'></i> Ver captura de pantalla de ejemplo";
+            }
+        }
+
+        // FUNCTION TO SHOW / HIDE AWS IAM POLICY SCREENSHOTS
+        function showIamImage(event) {
+            event.preventDefault();
+            const container = document.getElementById('iamImageContainer');
+            const link = event.currentTarget;
+            if (container.style.display === 'none' || !container.style.display) {
+                container.style.display = 'flex';
+                link.innerHTML = "<i class='fa-regular fa-image'></i> Ocultar captura de pantalla";
+            } else {
+                container.style.display = 'none';
+                link.innerHTML = "<i class='fa-regular fa-image'></i> Ver captura de pantalla de ejemplo";
+            }
+        }
+
+        // FUNCTION TO SHOW / HIDE AWS S3 BUCKET CREATION SCREENSHOT
+        function showS3CreateImage(event) {
+            event.preventDefault();
+            const container = document.getElementById('s3CreateImageContainer');
+            const link = event.currentTarget;
+            if (container.style.display === 'none' || !container.style.display) {
+                container.style.display = 'flex';
+                link.innerHTML = "<i class='fa-regular fa-image'></i> Ocultar captura de pantalla";
+            } else {
+                container.style.display = 'none';
+                link.innerHTML = "<i class='fa-regular fa-image'></i> Ver captura de pantalla de ejemplo";
+            }
+        }
+
+        // FUNCTION TO SHOW / HIDE AWS LAMBDA ENVIRONMENT VARIABLES SCREENSHOT
+        function showEnvImage(event) {
+            event.preventDefault();
+            const container = document.getElementById('envImageContainer');
+            const link = event.currentTarget;
+            if (container.style.display === 'none' || !container.style.display) {
+                container.style.display = 'flex';
+                link.innerHTML = "<i class='fa-regular fa-image'></i> Ocultar captura de pantalla";
+            } else {
+                container.style.display = 'none';
+                link.innerHTML = "<i class='fa-regular fa-image'></i> Ver captura de pantalla de ejemplo";
+            }
+        }
+
+        // FUNCTION TO COPY CODE TO CLIPBOARD WITH FALLBACK
+        function copiarAlPortapapeles(btn, index) {
+            const pre = document.getElementById('code-block-' + index);
+            const texto = pre.innerText;
+            
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(texto).then(() => {
+                    marcarCopiado(btn);
+                }).catch(err => {
+                    copiarFallback(btn, texto);
+                });
+            } else {
+                copiarFallback(btn, texto);
+            }
+        }
+
+        function copiarFallback(btn, texto) {
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = texto;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                const exito = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                if (exito) {
+                    marcarCopiado(btn);
+                } else {
+                    alert('Por favor selecciona y copia el código manualmente.');
+                }
+            } catch (err) {
+                alert('Error al copiar el código: ' + err);
+            }
+        }
+
+        function marcarCopiado(btn) {
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> ¡Copiado!';
+            btn.style.borderColor = '#10B981';
+            btn.style.color = '#10B981';
+            setTimeout(() => {
+                btn.innerHTML = originalContent;
+                btn.style.borderColor = 'rgba(255, 153, 0, 0.4)';
+                btn.style.color = '#FF9900';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
