@@ -18,7 +18,7 @@ api_log = open(os.path.join(BASE_DIR, "api.log"), "w")
 print("\n1. Iniciando la API (FastAPI) en puerto 8000...")
 # Bind a 0.0.0.0 para escuchar conexiones externas
 proceso_api = subprocess.Popen(
-    [sys.executable, "-m", "uvicorn", "api_unificada:app", "--host", "0.0.0.0", "--port", "8000"],
+    [".venv/bin/python", "-m", "uvicorn", "api_unificada:app", "--host", "0.0.0.0", "--port", "8000"],
     stdout=api_log,
     stderr=subprocess.STDOUT,
     cwd=BASE_DIR
