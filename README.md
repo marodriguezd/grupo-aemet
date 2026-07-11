@@ -6,8 +6,9 @@ Repositorio colaborativo para obtener, procesar y analizar datos climatológicos
 
 El desarrollo se realiza de manera independiente por cada miembro del equipo en sus respectivas carpetas:
 
-* **`Carmen/`**, **`Miguel/`**, **`Tamara/`**, **`Truji/`**: Carpetas de trabajo individual.
-* **`General/`**: Contiene la lógica común y utilidades compartidas.
+* **`Carmen/`**, **`Tamara/`**: Carpetas de trabajo individual.
+* **`Miguel/`**: Contiene la implementación del pipeline de ingesta (descarga masiva y robusta), procesamiento ETL, pruebas de NLP (`NLP.ipynb`) y scripts para el despliegue en EC2 (`AEMET_Despliegue_EC2.ipynb` y app unificada).
+* **`Truji/`**: Contiene el desarrollo y pruebas de la arquitectura en AWS (`AEMET_AWS.ipynb`, dashboards y recursos AWS) y despliegues en local (`AEMET_Local.ipynb`).
 
 ---
 
